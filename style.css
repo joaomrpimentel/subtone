@@ -6,11 +6,48 @@
     --bg-hover-color: rgba(0, 255, 65, 0.1);
     --disabled-color: rgba(0, 255, 65, 0.2);
 }
-body { background-color: var(--bg-color); color: var(--main-color); font-family: 'Roboto Mono', monospace; background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232a2a2a' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); position: relative; }
-body::after { content: " "; display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 4px, 6px 100%; pointer-events: none; z-index: 9999; opacity: 0.3; }
+
+/* Garante que o layout de altura total funcione de forma consistente */
+html, body {
+    height: 100%;
+}
+
+body { 
+    background-color: var(--bg-color); 
+    color: var(--main-color); 
+    font-family: 'Roboto Mono', monospace; 
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232a2a2a' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); 
+    position: relative;
+    overflow: hidden; /* Previne barras de rolagem indesejadas */
+}
+
+body::after { 
+    content: " "; 
+    display: block; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); 
+    background-size: 100% 4px, 6px 100%; 
+    pointer-events: none; 
+    z-index: 9999; 
+    opacity: 0.3; 
+}
+
+/* Estilos para o painel de controles quando estiver aberto no mobile */
+#app-container.controls-open #controls-column {
+    transform: translateX(0);
+}
+#app-container.controls-open #controls-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 .font-display { font-family: 'VT323', monospace; }
 .control-panel { border: 1px solid var(--border-color); padding: 1rem; margin-bottom: 1.5rem; }
-.action-button { border: 1px solid var(--border-color); padding: 0.5rem 1rem; width: 100%; text-align: center; transition: background-color 0.3s; cursor: pointer; }
+.action-button { border: 1px solid var(--border-color); padding: 0.5rem 1rem; text-align: center; transition: background-color 0.3s, color 0.3s; cursor: pointer; }
 .action-button:hover { background-color: var(--bg-hover-color); }
 input[type="range"] { -webkit-appearance: none; width: 100%; height: 2px; background: var(--border-color); outline: none; opacity: 0.7; transition: opacity .2s; }
 input[type="range"]:hover { opacity: 1; }
@@ -20,7 +57,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 20px; background: v
 .effect-item.active, .effect-item:hover { background-color: var(--bg-hover-color); }
 .effect-item .bracket { visibility: hidden; }
 .effect-item.active .bracket { visibility: visible; }
-#imageCanvas { border: 2px solid var(--border-color); width: 100%; height: auto; aspect-ratio: 1 / 1; background-color: rgba(0,0,0,0.2); }
+#imageCanvas { border: 2px solid var(--border-color); width: 100%; height: auto; max-height: 100%; object-fit: contain; aspect-ratio: 1 / 1; background-color: rgba(0,0,0,0.2); }
 .control-row { display: none; } .control-row.visible { display: block; }
 .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
 .switch input { opacity: 0; width: 0; height: 0; }
@@ -30,3 +67,9 @@ input:checked + .switch-slider { background-color: var(--bg-hover-color); }
 input:checked + .switch-slider:before { transform: translateX(20px); }
 .pattern-btn { background: transparent; border: 1px solid var(--border-color); padding: 0.25rem 0.5rem; }
 .pattern-btn.active { background: var(--bg-hover-color); }
+
+/* Remove scrollbar da coluna de controles mas mantém a funcionalidade */
+#controls-column::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}

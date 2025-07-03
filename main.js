@@ -1,13 +1,11 @@
 // ===================================================================================
 // E F F E C T S   L I B R A R Y
 // Central de todos os efeitos de imagem.
-// Para adicionar um novo efeito, basta criar um novo objeto aqui.
 // ===================================================================================
 
 const EFFECTS_LIBRARY = {
     dithering: {
         name: 'DITHERING',
-        // Gera o HTML para os controles específicos deste efeito
         getControlsHTML: () => `
             <div class="control-panel">
                 <h3 class="mb-4 text-xl">--Effect Controls--</h3>
@@ -34,9 +32,7 @@ const EFFECTS_LIBRARY = {
                 </div>
             </div>
         `,
-        // Função para inicializar os event listeners dos controles do efeito
         init(app) {
-            // Event listeners para os controles que este efeito adicionou
             document.getElementById('dithering-pattern-selector').addEventListener('click', (e) => {
                 if (e.target.tagName === 'BUTTON') {
                     document.querySelector('#dithering-pattern-selector .active').classList.remove('active');
@@ -50,9 +46,7 @@ const EFFECTS_LIBRARY = {
                 app.updateState({ isColorMode: e.target.checked });
             });
         },
-        // A lógica principal de aplicação do efeito
         apply(imageData, state) {
-            // Funções de ajuda (helpers) específicas para este efeito
             const colorDist = (c1, c2) => Math.pow((c1.r - c2.r) * 0.299, 2) + Math.pow((c1.g - c2.g) * 0.587, 2) + Math.pow((c1.b - c2.b) * 0.114, 2);
             const findNearestColor = (pixel, palette) => {
                 let nearest = palette[0];
@@ -79,16 +73,13 @@ const EFFECTS_LIBRARY = {
                 return palette;
             };
 
-            // Lógica principal do Dithering
             const { pixelSize, isColorMode, ditheringPattern, threshold, colorCount } = state;
             const width = imageData.width;
             const height = imageData.height;
-
             const gridW = Math.floor(width / pixelSize);
             const gridH = Math.floor(height / pixelSize);
             const pixelGrid = new Array(gridW * gridH);
 
-            // 1. Downsample
             for (let y = 0; y < gridH; y++) {
                 for (let x = 0; x < gridW; x++) {
                     let r = 0, g = 0, b = 0, count = 0;
@@ -114,7 +105,6 @@ const EFFECTS_LIBRARY = {
 
             const colorPalette = isColorMode ? generateColorPalette(colorCount) : [];
 
-            // 2. Aplicar padrões de dithering
             if (ditheringPattern === 'F-S') {
                 for (let y = 0; y < gridH; y++) {
                     for (let x = 0; x < gridW; x++) {
@@ -122,11 +112,9 @@ const EFFECTS_LIBRARY = {
                         const oldPixel = pixelGrid[i];
                         const newPixel = isColorMode ? findNearestColor(oldPixel, colorPalette) : (oldPixel < threshold ? 0 : 255);
                         pixelGrid[i] = newPixel;
-                        
                         const errR = isColorMode ? oldPixel.r - newPixel.r : oldPixel - newPixel;
                         const errG = isColorMode ? oldPixel.g - newPixel.g : errR;
                         const errB = isColorMode ? oldPixel.b - newPixel.b : errR;
-
                         const setError = (dx, dy, factor) => {
                             const ni = (y + dy) * gridW + (x + dx);
                             if (x + dx >= 0 && x + dx < gridW && y + dy >= 0 && y + dy < gridH) {
@@ -140,13 +128,8 @@ const EFFECTS_LIBRARY = {
                         setError(1, 0, 7 / 16); setError(-1, 1, 3 / 16); setError(0, 1, 5 / 16); setError(1, 1, 1 / 16);
                     }
                 }
-            } else if (ditheringPattern === 'Bayer') {
-                // ... (lógica do Bayer)
-            } else if (ditheringPattern === 'Random') {
-                // ... (lógica do Random)
             }
             
-            // 3. Desenhar o resultado no imageData final
             const pixels = imageData.data;
             for (let y = 0; y < gridH; y++) {
                 for (let x = 0; x < gridW; x++) {
@@ -166,54 +149,23 @@ const EFFECTS_LIBRARY = {
             }
         }
     },
-    //  ============================================================
-    //  ==> PARA ADICIONAR UM NOVO EFEITO, COPIE O MODELO ABAIXO <==
-    //  ============================================================
-    /*
-    newEffect: {
-        name: 'NOME DO EFEITO',
-        getControlsHTML: () => `... código HTML dos seus controles ...`,
-        init(app) {
-            // ... adicione os event listeners dos seus controles ...
-            // ... chame app.updateState({ novoParametro: valor }) ao mudar ...
-        },
-        apply(imageData, state) {
-            // ... sua lógica de manipulação de pixels aqui ...
-        }
-    },
-    */
 };
-
 
 // ===================================================================================
 // A P P L I C A T I O N   C O R E
-// Gerencia o estado, a UI e o pipeline de renderização.
+// Gerencia o estado, a UI e a pipeline de renderização.
 // ===================================================================================
-
 class ImageProcessorApp {
     constructor(effectsLibrary) {
         this.effectsLibrary = effectsLibrary;
-        this.dom = {}; // Para guardar referências de elementos do DOM
+        this.dom = {};
         this.originalImage = null;
         this.originalImageData = null;
-        
-        // Estado centralizado: uma única fonte da verdade para todos os parâmetros.
         this.state = {
             activeEffect: 'dithering',
-            // Preprocessing
-            blackPoint: 0,
-            whitePoint: 255,
-            grain: 0,
-            gamma: 1,
-            // Parâmetros do Dithering
-            pixelSize: 1,
-            isColorMode: false,
-            ditheringPattern: 'F-S',
-            threshold: 128,
-            colorCount: 8,
-            // Adicione aqui os estados para novos efeitos
+            blackPoint: 0, whitePoint: 255, grain: 0, gamma: 1,
+            pixelSize: 1, isColorMode: false, ditheringPattern: 'F-S', threshold: 128, colorCount: 8,
         };
-
         this.init();
     }
 
@@ -226,6 +178,7 @@ class ImageProcessorApp {
     }
 
     queryDOMElements() {
+        this.dom.appContainer = document.getElementById('app-container');
         this.dom.canvas = document.getElementById('imageCanvas');
         this.dom.ctx = this.dom.canvas.getContext('2d', { willReadFrequently: true });
         this.dom.fileInput = document.getElementById('fileInput');
@@ -233,18 +186,24 @@ class ImageProcessorApp {
         this.dom.exportButton = document.getElementById('exportButton');
         this.dom.effectsMenu = document.getElementById('effects-menu');
         this.dom.effectControlsContainer = document.getElementById('effect-controls-container');
+        // Mobile-specific elements
+        this.dom.toggleControlsBtn = document.getElementById('toggle-controls-btn');
+        this.dom.controlsOverlay = document.getElementById('controls-overlay');
     }
 
     setupEventListeners() {
-        // Event listeners globais
         this.dom.uploadButton.addEventListener('click', () => this.dom.fileInput.click());
         this.dom.fileInput.addEventListener('change', (e) => this.loadImage(e.target.files[0]));
+        
+        // Listeners para os controles mobile
+        this.dom.toggleControlsBtn.addEventListener('click', () => this.toggleControlsPanel());
+        this.dom.controlsOverlay.addEventListener('click', () => this.toggleControlsPanel(false));
+
         window.addEventListener('resize', () => {
              this.setupCanvas();
              this.applyEffects();
         });
 
-        // Event listeners para sliders de pré-processamento
         const sliders = document.querySelectorAll('.slider');
         sliders.forEach(slider => {
             slider.addEventListener('input', (e) => {
@@ -255,17 +214,18 @@ class ImageProcessorApp {
         });
     }
 
-    // Atualiza o estado e agenda uma nova renderização
+    toggleControlsPanel(forceOpen) {
+        this.dom.appContainer.classList.toggle('controls-open', forceOpen);
+    }
+
     updateState(newState) {
         Object.assign(this.state, newState);
-        // Usar requestAnimationFrame evita sobrecarga de renderizações
-        // se o usuário mover um slider muito rápido.
         requestAnimationFrame(() => this.applyEffects());
     }
 
     setupCanvas() {
         const container = this.dom.canvas.parentElement;
-        const size = Math.min(container.clientWidth, 600);
+        const size = Math.min(container.clientWidth, container.clientHeight);
         this.dom.canvas.width = size;
         this.dom.canvas.height = size;
         if (!this.originalImage) this.drawPlaceholder();
@@ -293,10 +253,8 @@ class ImageProcessorApp {
                 const ratio = Math.min(hRatio, vRatio);
                 const sx = (canvas.width - this.originalImage.width * ratio) / 2;
                 const sy = (canvas.height - this.originalImage.height * ratio) / 2;
-                
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(this.originalImage, 0, 0, this.originalImage.width, this.originalImage.height, sx, sy, this.originalImage.width * ratio, this.originalImage.height * ratio);
-                
                 this.originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 this.applyEffects();
             };
@@ -324,20 +282,13 @@ class ImageProcessorApp {
     renderEffectControls() {
         const effect = this.effectsLibrary[this.state.activeEffect];
         if (!effect) return;
-
         this.dom.effectControlsContainer.innerHTML = effect.getControlsHTML();
-        
-        // Inicializa os event listeners específicos para esses novos controles
         if (effect.init) {
             effect.init(this);
         }
-
-        // Conecta os novos sliders (se houver) ao estado
         this.dom.effectControlsContainer.querySelectorAll('.slider').forEach(slider => {
-            // Atualiza o valor visual inicial
             const valueSpan = document.getElementById(`${slider.id}Value`);
             if (valueSpan) valueSpan.textContent = slider.value;
-            // Adiciona listener
             slider.addEventListener('input', (e) => {
                 const { id, value } = e.target;
                 if (valueSpan) valueSpan.textContent = value;
@@ -353,49 +304,35 @@ class ImageProcessorApp {
         this.renderEffectControls();
     }
 
-    // Pipeline principal de processamento de imagem
     applyEffects() {
         if (!this.originalImageData) return;
-
-        // Cria uma cópia dos dados da imagem original para não a destruir
         const imageData = new ImageData(
             new Uint8ClampedArray(this.originalImageData.data),
             this.originalImageData.width,
             this.originalImageData.height
         );
-
-        // 1. Aplicar pré-processamento
         this.applyPreprocessing(imageData.data);
-
-        // 2. Aplicar o efeito ativo
         const activeEffect = this.effectsLibrary[this.state.activeEffect];
         if (activeEffect && activeEffect.apply) {
             activeEffect.apply(imageData, this.state);
         }
-
-        // 3. Desenhar o resultado final no canvas
         this.dom.ctx.clearRect(0, 0, this.dom.canvas.width, this.dom.canvas.height);
         this.dom.ctx.putImageData(imageData, 0, 0);
     }
     
     applyPreprocessing(pixels) {
         let { blackPoint, whitePoint, gamma, grain } = this.state;
-
         if (whitePoint <= blackPoint) { whitePoint = blackPoint + 1; }
         const range = whitePoint - blackPoint;
-
         for (let i = 0; i < pixels.length; i += 4) {
-            // Levels
             for (let j = 0; j < 3; j++) {
                 let val = pixels[i + j];
                 val = (range > 0) ? (val - blackPoint) / range * 255 : (val < blackPoint ? 0 : 255);
                 pixels[i + j] = Math.max(0, Math.min(255, val));
             }
-            // Gamma
             pixels[i]   = 255 * Math.pow(pixels[i] / 255, gamma);
             pixels[i+1] = 255 * Math.pow(pixels[i+1] / 255, gamma);
             pixels[i+2] = 255 * Math.pow(pixels[i+2] / 255, gamma);
-            // Grain
             if (grain > 0) {
                 const noise = (Math.random() - 0.5) * grain;
                 pixels[i]   = Math.max(0, Math.min(255, pixels[i] + noise));
@@ -406,8 +343,6 @@ class ImageProcessorApp {
     }
 }
 
-
-// Inicia a aplicação quando o DOM estiver pronto
 window.addEventListener('DOMContentLoaded', () => {
     new ImageProcessorApp(EFFECTS_LIBRARY);
 });
