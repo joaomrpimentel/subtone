@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUBTONE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="p-4 sm:p-6 lg:p-8">
+
+    <div class="grid grid-cols-1 lg:grid-cols-[250px_350px_1fr] gap-6 max-w-screen-2xl mx-auto">
+        
+        <aside class="text-lg">
+            <h1 class="font-display text-4xl mb-4">SUBTONE</h1>
+            <h2 class="text-xl mb-2">/EFFECTS</h2>
+            <nav id="effects-menu"></nav>
+        </aside>
+
+        <main>
+            <div class="control-panel">
+                <input type="file" id="fileInput" accept="image/png, image/jpeg" class="hidden"/>
+                <button id="uploadButton" class="action-button flex justify-between items-center w-full">
+                    <span>UPLOAD MEDIA</span>
+                    <span class="text-sm opacity-70">[.jpg, .png]</span>
+                </button>
+            </div>
+
+            <div class="control-panel">
+                <h3 class="mb-4 text-xl">--Image Preprocessing--</h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center"><label for="blackPoint">Black Point</label><span id="blackPointValue">0</span></div>
+                    <input type="range" id="blackPoint" name="blackPoint" min="0" max="255" value="0" class="slider">
+                    
+                    <div class="flex justify-between items-center"><label for="whitePoint">White Point</label><span id="whitePointValue">255</span></div>
+                    <input type="range" id="whitePoint" name="whitePoint" min="0" max="255" value="255" class="slider">
+                    
+                    <div class="flex justify-between items-center"><label for="grain">Grain</label><span id="grainValue">0</span></div>
+                    <input type="range" id="grain" name="grain" min="0" max="100" value="0" class="slider">
+                    
+                    <div class="flex justify-between items-center"><label for="gamma">Gamma</label><span id="gammaValue">1</span></div>
+                    <input type="range" id="gamma" name="gamma" min="0.1" max="3" value="1" step="0.1" class="slider">
+                </div>
+            </div>
+
+            <div id="effect-controls-container"></div>
+
+            <div class="control-panel">
+                <button id="exportButton" class="action-button flex justify-between items-center w-full">
+                    <span>EXPORT CANVAS</span>
+                    <span class="text-sm opacity-70">PNG</span>
+                </button>
+            </div>
+        </main>
+
+        <div class="w-full h-full flex items-center justify-center">
+            <canvas id="imageCanvas"></canvas>
+        </div>
+    </div>
+
+    <script src="main.js" type="module"></script>
+</body>
+</html>
