@@ -5,19 +5,15 @@ import { halftoneEffect } from './effects/halftone.js';
 
 // ===================================================================================
 // E F F E C T S   L I B R A R Y
-// Central de todos os efeitos de imagem.
 // ===================================================================================
 const EFFECTS_LIBRARY = {
     dithering: ditheringEffect,
     crt: crtEffect,
     halftone: halftoneEffect,
-    // Para adicionar novos efeitos, importe e adicione-os aqui.
 };
-
 
 // ===================================================================================
 // A P P L I C A T I O N   C O R E
-// Gerencia o estado, a UI e a pipeline de renderização.
 // ===================================================================================
 class ImageProcessorApp {
     constructor(effectsLibrary) {
@@ -26,17 +22,12 @@ class ImageProcessorApp {
         this.originalImage = null;
         this.originalImageData = null;
         
-        // Estado centralizado: uma única fonte da verdade para todos os parâmetros.
         this.state = {
             activeEffect: 'dithering',
-            // Preprocessing
             blackPoint: 0, whitePoint: 255, grain: 0, gamma: 1,
-            // Parâmetros do Dithering
             pixelSize: 1, isColorMode: false, ditheringPattern: 'F-S', threshold: 128, colorCount: 8,
-            // Parâmetros do CRT
             crtDistortion: 0.03, crtDotPitch: 4, crtDotScale: 1, crtPattern: 'Monitor', crtConvergence: 1,
-            // Parâmetros do Halftone
-            halftoneGridSize: 10, halftoneDotScale: 1, halftoneGrayscale: false,
+            halftoneGridSize: 10, halftoneDotScale: 1, halftoneGrayscale: false, halftoneIsBgBlack: false,
         };
         this.init();
     }
@@ -46,8 +37,7 @@ class ImageProcessorApp {
         this.setupEventListeners();
         this.resizeCanvas();
         this.renderEffectSelector();
-        this.renderEffectControls();
-        this.updateAllControlValues();
+        this.setActiveEffect('dithering', true); // Define o efeito inicial
     }
 
     queryDOMElements() {
@@ -80,7 +70,7 @@ class ImageProcessorApp {
             this.applyEffects();
         });
 
-        // Event delegation for all sliders and controls
+        // Delegação de eventos para todos os controles dentro do painel principal
         this.dom.controlsMain.addEventListener('input', (e) => {
             if (e.target.classList.contains('slider')) {
                 const { id, value } = e.target;
@@ -109,12 +99,11 @@ class ImageProcessorApp {
             const imgRatio = this.originalImage.width / this.originalImage.height;
             const containerRatio = maxWidth / maxHeight;
             
-            let newWidth, newHeight;
+            let newWidth = maxWidth;
+            let newHeight = maxHeight;
             if (imgRatio > containerRatio) {
-                newWidth = maxWidth;
                 newHeight = maxWidth / imgRatio;
             } else {
-                newHeight = maxHeight;
                 newWidth = maxHeight * imgRatio;
             }
             this.dom.canvas.width = newWidth;
@@ -177,8 +166,13 @@ class ImageProcessorApp {
 
     renderEffectControls() {
         const effect = this.effectsLibrary[this.state.activeEffect];
-        if (!effect) return;
+        if (!effect) {
+            this.dom.effectControlsContainer.innerHTML = '';
+            return;
+        };
+        
         this.dom.effectControlsContainer.innerHTML = effect.getControlsHTML();
+
         if (effect.init) {
             effect.init(this);
         }
@@ -203,11 +197,13 @@ class ImageProcessorApp {
         });
     }
 
-    setActiveEffect(effectId) {
-        if (effectId === this.state.activeEffect) return;
-        this.updateState({ activeEffect: effectId });
+    setActiveEffect(effectId, isInitial = false) {
+        if (!isInitial && effectId === this.state.activeEffect) return;
+        
+        this.state.activeEffect = effectId;
         this.renderEffectSelector();
         this.renderEffectControls();
+        this.applyEffects();
     }
 
     applyEffects() {
@@ -259,4 +255,9 @@ class ImageProcessorApp {
 // Inicia a aplicação quando o DOM estiver pronto.
 window.addEventListener('DOMContentLoaded', () => {
     new ImageProcessorApp(EFFECTS_LIBRARY);
+
+    // Controla a tela de loading
+    setTimeout(() => {
+        document.body.classList.add('loaded');
+    }, 3000);
 });

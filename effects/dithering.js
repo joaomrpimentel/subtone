@@ -8,32 +8,34 @@ export const ditheringEffect = {
     name: 'DITHERING',
     getControlsHTML: () => `
         <div class="control-panel">
-            <h3 class="mb-4 text-xl font-bold">--Effect Controls--</h3>
-            <div class="space-y-4">
+            <h3 class="panel-title">--Effect Controls--</h3>
+            <div class="controls-section">
                 <div>
                     <label>Pattern</label>
-                    <div id="dithering-pattern-selector" class="flex gap-2 mt-1">
+                    <div id="dithering-pattern-selector" class="pattern-selector">
                         <button class="pattern-btn active" data-pattern="F-S">F-S</button>
                         <button class="pattern-btn" data-pattern="Bayer">Bayer</button>
                         <button class="pattern-btn" data-pattern="Random">Random</button>
                     </div>
                 </div>
                 <div>
-                    <div class="flex justify-between items-center"><label for="pixelSize">Pixel Size</label><span id="pixelSizeValue">1</span></div>
+                    <div class="control-row-flex"><label for="pixelSize">Pixel Size</label><span id="pixelSizeValue">1</span></div>
                     <input type="range" id="pixelSize" name="pixelSize" min="1" max="20" value="1" class="slider">
                 </div>
-                <div class="flex justify-between items-center"><label for="colorMode">Color Mode</label><label class="switch"><input type="checkbox" id="colorMode"><span class="switch-slider"></span></label></div>
+                <div class="control-row-flex">
+                    <label for="colorMode">Color Mode</label>
+                    <label class="switch"><input type="checkbox" id="colorMode"><span class="switch-slider"></span></label>
+                </div>
                 <div id="threshold-control" class="control-row visible">
-                    <div class="flex justify-between items-center"><label for="threshold">Threshold</label><span id="thresholdValue">128</span></div>
+                    <div class="control-row-flex"><label for="threshold">Threshold</label><span id="thresholdValue">128</span></div>
                     <input type="range" id="threshold" name="threshold" min="0" max="255" value="128" class="slider">
                 </div>
                 <div id="colorCount-control" class="control-row">
-                    <div class="flex justify-between items-center"><label for="colorCount">Color Count</label><span id="colorCountValue">8</span></div>
+                    <div class="control-row-flex"><label for="colorCount">Color Count</label><span id="colorCountValue">8</span></div>
                     <input type="range" id="colorCount" name="colorCount" min="2" max="32" value="8" class="slider">
                 </div>
             </div>
-        </div>
-    `,
+        </div>`,
     init(app) {
         document.getElementById('dithering-pattern-selector').addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
