@@ -8,7 +8,7 @@ export const ditheringEffect = {
     name: 'DITHERING',
     getControlsHTML: () => `
         <div class="control-panel">
-            <h3 class="mb-4 text-xl">--Effect Controls--</h3>
+            <h3 class="mb-4 text-xl font-bold">--Effect Controls--</h3>
             <div class="space-y-4">
                 <div>
                     <label>Pattern</label>
@@ -18,8 +18,10 @@ export const ditheringEffect = {
                         <button class="pattern-btn" data-pattern="Random">Random</button>
                     </div>
                 </div>
-                <div class="flex justify-between items-center"><label for="pixelSize">Pixel Size</label><span id="pixelSizeValue">1</span></div>
-                <input type="range" id="pixelSize" name="pixelSize" min="1" max="20" value="1" class="slider">
+                <div>
+                    <div class="flex justify-between items-center"><label for="pixelSize">Pixel Size</label><span id="pixelSizeValue">1</span></div>
+                    <input type="range" id="pixelSize" name="pixelSize" min="1" max="20" value="1" class="slider">
+                </div>
                 <div class="flex justify-between items-center"><label for="colorMode">Color Mode</label><label class="switch"><input type="checkbox" id="colorMode"><span class="switch-slider"></span></label></div>
                 <div id="threshold-control" class="control-row visible">
                     <div class="flex justify-between items-center"><label for="threshold">Threshold</label><span id="thresholdValue">128</span></div>
@@ -86,6 +88,7 @@ export const ditheringEffect = {
         const { pixelSize, isColorMode, ditheringPattern, threshold, colorCount } = state;
         const width = imageData.width;
         const height = imageData.height;
+        const data = imageData.data;
         const gridW = Math.floor(width / pixelSize);
         const gridH = Math.floor(height / pixelSize);
         const pixelGrid = new Array(gridW * gridH);
@@ -100,16 +103,18 @@ export const ditheringEffect = {
                         const iy = y * pixelSize + py;
                         if (ix < width && iy < height) {
                             const i = (iy * width + ix) * 4;
-                            r += imageData.data[i]; g += imageData.data[i+1]; b += imageData.data[i+2];
+                            r += data[i]; g += data[i+1]; b += data[i+2];
                             count++;
                         }
                     }
                 }
-                if (isColorMode) {
-                    pixelGrid[y * gridW + x] = { r: r / count, g: g / count, b: b / count };
-                } else {
-                    const avg = (r / count * 0.299) + (g / count * 0.587) + (b / count * 0.114);
-                    pixelGrid[y * gridW + x] = avg;
+                if (count > 0) {
+                    if (isColorMode) {
+                        pixelGrid[y * gridW + x] = { r: r / count, g: g / count, b: b / count };
+                    } else {
+                        const avg = (r / count * 0.299) + (g / count * 0.587) + (b / count * 0.114);
+                        pixelGrid[y * gridW + x] = avg;
+                    }
                 }
             }
         }
@@ -118,6 +123,7 @@ export const ditheringEffect = {
 
         // 2. Aplicar padrões de dithering
         if (ditheringPattern === 'F-S') {
+            // Floyd-Steinberg: propaga o erro para os pixels vizinhos.
             for (let y = 0; y < gridH; y++) {
                 for (let x = 0; x < gridW; x++) {
                     const i = y * gridW + x;
@@ -138,6 +144,43 @@ export const ditheringEffect = {
                         }
                     };
                     setError(1, 0, 7 / 16); setError(-1, 1, 3 / 16); setError(0, 1, 5 / 16); setError(1, 1, 1 / 16);
+                }
+            }
+        } else { 
+            const bayerMatrix = [
+                [0, 8, 2, 10],
+                [12, 4, 14, 6],
+                [3, 11, 1, 9],
+                [15, 7, 13, 5]
+            ];
+            const bayerSize = 4;
+
+            for (let y = 0; y < gridH; y++) {
+                for (let x = 0; x < gridW; x++) {
+                    const i = y * gridW + x;
+                    const oldPixel = pixelGrid[i];
+
+                    if (isColorMode) {
+                        let ditheredPixel = { r: oldPixel.r, g: oldPixel.g, b: oldPixel.b };
+                        let adjustment = 0;
+                        if (ditheringPattern === 'Bayer') {
+                            adjustment = (bayerMatrix[y % bayerSize][x % bayerSize] / 16.0 - 0.5) * (255.0 / colorCount);
+                        } else if (ditheringPattern === 'Random') {
+                            adjustment = (Math.random() - 0.5) * (255.0 / colorCount);
+                        }
+                        ditheredPixel.r += adjustment;
+                        ditheredPixel.g += adjustment;
+                        ditheredPixel.b += adjustment;
+                        pixelGrid[i] = findNearestColor(ditheredPixel, colorPalette);
+                    } else { // Monochrome
+                        let ditherThreshold;
+                        if (ditheringPattern === 'Bayer') {
+                            ditherThreshold = (bayerMatrix[y % bayerSize][x % bayerSize] / 16.0) * 255.0;
+                        } else { // Random
+                            ditherThreshold = Math.random() * 255.0;
+                        }
+                        pixelGrid[i] = oldPixel > ditherThreshold ? 255 : 0;
+                    }
                 }
             }
         }

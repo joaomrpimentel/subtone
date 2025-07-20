@@ -8,7 +8,7 @@ export const crtEffect = {
     name: 'CRT',
     getControlsHTML: () => `
         <div class="control-panel">
-            <h3 class="mb-4 text-xl">--Effect Controls--</h3>
+            <h3 class="mb-4 text-xl font-bold">--Effect Controls--</h3>
             <div class="space-y-4">
                 <div>
                     <label>Pattern</label>
@@ -18,18 +18,22 @@ export const crtEffect = {
                         <button class="pattern-btn" data-pattern="LCD">LCD</button>
                     </div>
                 </div>
-
-                <div class="flex justify-between items-center"><label for="crtDistortion">Distortion</label><span id="crtDistortionValue">0.03</span></div>
-                <input type="range" id="crtDistortion" name="crtDistortion" min="0" max="0.1" value="0.03" step="0.005" class="slider">
-
-                <div class="flex justify-between items-center"><label for="crtDotPitch">Dot Pitch</label><span id="crtDotPitchValue">4</span></div>
-                <input type="range" id="crtDotPitch" name="crtDotPitch" min="1" max="10" value="4" step="1" class="slider">
-
-                <div class="flex justify-between items-center"><label for="crtDotScale">Dot Scale</label><span id="crtDotScaleValue">1</span></div>
-                <input type="range" id="crtDotScale" name="crtDotScale" min="0.5" max="1.5" value="1" step="0.05" class="slider">
-
-                <div class="flex justify-between items-center"><label for="crtConvergence">Convergence</label><span id="crtConvergenceValue">1</span></div>
-                <input type="range" id="crtConvergence" name="crtConvergence" min="0" max="5" value="1" step="0.1" class="slider">
+                <div>
+                    <div class="flex justify-between items-center"><label for="crtDistortion">Distortion</label><span id="crtDistortionValue">0.03</span></div>
+                    <input type="range" id="crtDistortion" name="crtDistortion" min="0" max="0.1" value="0.03" step="0.005" class="slider">
+                </div>
+                <div>
+                    <div class="flex justify-between items-center"><label for="crtDotPitch">Dot Pitch</label><span id="crtDotPitchValue">4</span></div>
+                    <input type="range" id="crtDotPitch" name="crtDotPitch" min="1" max="10" value="4" step="1" class="slider">
+                </div>
+                <div>
+                    <div class="flex justify-between items-center"><label for="crtDotScale">Dot Scale</label><span id="crtDotScaleValue">1</span></div>
+                    <input type="range" id="crtDotScale" name="crtDotScale" min="0.5" max="1.5" value="1" step="0.05" class="slider">
+                </div>
+                <div>
+                    <div class="flex justify-between items-center"><label for="crtConvergence">Convergence</label><span id="crtConvergenceValue">1</span></div>
+                    <input type="range" id="crtConvergence" name="crtConvergence" min="0" max="5" value="1" step="0.1" class="slider">
+                </div>
             </div>
         </div>
     `,
