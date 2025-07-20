@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SUBTONE</title>
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'%3E%3Cg fill='%2300ff41'%3E%3Crect x='0' y='10' width='10' height='30'/%3E%3Crect x='20' y='10' width='10' height='30'/%3E%3Crect x='40' y='10' width='10' height='30'/%3E%3C/g%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,38 +14,54 @@
 </head>
 <body class="text-lg">
 
-    <!-- Estrutura principal da aplicação com Flexbox -->
-    <div id="app-container" class="flex flex-col lg:flex-row h-screen max-w-screen-2xl mx-auto">
+    <!-- Tela de Loading -->
+    <div id="loading-screen">
+        <div class="logo-container animated">
+            <svg class="subtone-logo" viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg">
+                <g id="icon">
+                    <rect id="bar1" x="0" y="15" width="12" height="30" />
+                    <rect id="bar2" x="20" y="15" width="12" height="30" />
+                    <rect id="bar3" x="40" y="15" width="12" height="30" />
+                </g>
+                <text id="logo-text" x="70" y="50">SUBTONE</text>
+            </svg>
+        </div>
+    </div>
 
+    <!-- Estrutura principal da aplicação -->
+    <div id="app-container">
         <!-- Cabeçalho para Mobile -->
         <header id="mobile-header" class="lg:hidden fixed top-0 left-0 right-0 z-20 flex justify-between items-center p-4 bg-[var(--bg-color)] border-b border-[var(--border-color)]">
-            <h1 class="font-display text-3xl">SUBTONE</h1>
+            <!-- Logo Estático para Mobile -->
+            <div class="static-logo-container">
+                <svg class="static-subtone-logo" viewBox="0 0 52 30"><g id="icon"><rect x="0" y="0" width="8" height="30" /><rect x="14" y="0" width="8" height="30" /><rect x="28" y="0" width="8" height="30" /></g></svg>
+            </div>
             <button id="toggle-controls-btn" class="action-button !p-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
             </button>
         </header>
 
-        <!-- Overlay para fechar o menu de controles no mobile -->
+        <!-- Overlay -->
         <div id="controls-overlay" class="lg:hidden fixed inset-0 bg-black/60 z-30 opacity-0 pointer-events-none"></div>
 
-        <!-- Coluna de Controles (Menu Lateral) -->
+        <!-- Coluna de Controles -->
         <div id="controls-column" class="fixed lg:static top-0 left-0 h-full z-40 w-[320px] sm:w-[350px] lg:w-[350px] lg:flex-shrink-0 bg-[var(--bg-color)] p-6 lg:p-8 overflow-y-auto -translate-x-full lg:translate-x-0">
             <div class="lg:sticky lg:top-8">
-                <!-- Cabeçalho do Painel -->
                 <div class="flex justify-between items-center mb-6">
-                    <h1 class="font-display text-4xl">SUBTONE</h1>
+                    <!-- Logo Estático para Desktop -->
+                    <div class="logo-container static hidden lg:block">
+                        <svg class="static-subtone-logo" viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg">
+                            <g id="icon"><rect x="0" y="15" width="12" height="30" /><rect x="20" y="15" width="12" height="30" /><rect x="40" y="15" width="12" height="30" /></g>
+                            <text id="logo-text" x="70" y="50">SUBTONE</text>
+                        </svg>
+                    </div>
                     <button id="close-controls-btn" class="lg:hidden action-button !p-2">
                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
-
-                <!-- Seleção de Efeitos -->
-                <div class="control-panel">
-                    <h2 class="text-xl mb-3 font-bold">/EFFECTS</h2>
-                    <nav id="effects-menu" class="space-y-2"></nav>
-                </div>
-
-                <!-- Controles Principais -->
+                
+                <div class="control-panel"><h2 class="text-xl mb-3 font-bold">/EFFECTS</h2><nav id="effects-menu" class="space-y-2"></nav></div>
+                
                 <main id="controls-main">
                     <div class="control-panel">
                         <input type="file" id="fileInput" accept="image/png, image/jpeg" class="hidden"/>
@@ -83,7 +101,6 @@
                 </main>
             </div>
         </div>
-
         <!-- Coluna do Canvas -->
         <div id="canvas-wrapper" class="w-full flex-grow flex items-center justify-center pt-[80px] lg:pt-0 p-4 lg:p-8">
             <canvas id="imageCanvas"></canvas>
