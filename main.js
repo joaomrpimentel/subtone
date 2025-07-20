@@ -1,6 +1,7 @@
 // Importa os efeitos da biblioteca
 import { ditheringEffect } from './effects/dithering.js';
 import { crtEffect } from './effects/crt.js';
+import { halftoneEffect } from './effects/halftone.js';
 
 // ===================================================================================
 // E F F E C T S   L I B R A R Y
@@ -9,6 +10,7 @@ import { crtEffect } from './effects/crt.js';
 const EFFECTS_LIBRARY = {
     dithering: ditheringEffect,
     crt: crtEffect,
+    halftone: halftoneEffect,
     // Para adicionar novos efeitos, importe e adicione-os aqui.
 };
 
@@ -33,6 +35,8 @@ class ImageProcessorApp {
             pixelSize: 1, isColorMode: false, ditheringPattern: 'F-S', threshold: 128, colorCount: 8,
             // Parâmetros do CRT
             crtDistortion: 0.03, crtDotPitch: 4, crtDotScale: 1, crtPattern: 'Monitor', crtConvergence: 1,
+            // Parâmetros do Halftone
+            halftoneGridSize: 10, halftoneDotScale: 1, halftoneGrayscale: false,
         };
         this.init();
     }
@@ -183,10 +187,15 @@ class ImageProcessorApp {
     
     updateAllControlValues() {
         Object.keys(this.state).forEach(key => {
-            const slider = document.getElementById(key);
+            const control = document.getElementById(key);
             const valueSpan = document.getElementById(`${key}Value`);
-            if (slider) {
-                slider.value = this.state[key];
+            
+            if (control) {
+                if (control.type === 'checkbox') {
+                    control.checked = this.state[key];
+                } else {
+                    control.value = this.state[key];
+                }
             }
             if (valueSpan) {
                 valueSpan.textContent = this.state[key];
