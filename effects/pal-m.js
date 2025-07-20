@@ -41,7 +41,6 @@ export const palMEffect = {
             </div>
         </div>`,
     init(app) {
-        // O event listener principal no main.js já cuida dos sliders.
     },
 
     apply(imageData, state) {

@@ -29,7 +29,7 @@ class ImageProcessorApp {
             blackPoint: 0, whitePoint: 255, grain: 0, gamma: 1,
             pixelSize: 1, isColorMode: false, ditheringPattern: 'F-S', threshold: 128, colorCount: 8,
             crtDistortion: 0.03, crtDotPitch: 4, crtDotScale: 1, crtPattern: 'Monitor', crtConvergence: 1,
-            halftoneGridSize: 10, halftoneDotScale: 1, halftoneGrayscale: false, halftoneIsBgBlack: false,
+            halftoneGridSize: 10, halftoneDotScale: 1, halftoneGrayscale: false, halftoneIsBgBlack: true,
             palamBleed: 4, palamScanlines: 0.3, palamNoise: 0.15, palamFringing: 2.0, palamSaturation: 1.0, palamPhaseShift: 2, palamScanlineGap: 2,
         };
         this.init();
