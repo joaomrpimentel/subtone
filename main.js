@@ -2,6 +2,7 @@
 import { ditheringEffect } from './effects/dithering.js';
 import { crtEffect } from './effects/crt.js';
 import { halftoneEffect } from './effects/halftone.js';
+import { palMEffect } from './effects/pal-m.js';
 
 // ===================================================================================
 // E F F E C T S   L I B R A R Y
@@ -10,6 +11,7 @@ const EFFECTS_LIBRARY = {
     dithering: ditheringEffect,
     crt: crtEffect,
     halftone: halftoneEffect,
+    "pal-m": palMEffect,
 };
 
 // ===================================================================================
@@ -28,6 +30,7 @@ class ImageProcessorApp {
             pixelSize: 1, isColorMode: false, ditheringPattern: 'F-S', threshold: 128, colorCount: 8,
             crtDistortion: 0.03, crtDotPitch: 4, crtDotScale: 1, crtPattern: 'Monitor', crtConvergence: 1,
             halftoneGridSize: 10, halftoneDotScale: 1, halftoneGrayscale: false, halftoneIsBgBlack: false,
+            palamBleed: 4, palamScanlines: 0.3, palamNoise: 0.15, palamFringing: 2.0, palamSaturation: 1.0, palamPhaseShift: 2, palamScanlineGap: 2,
         };
         this.init();
     }
