@@ -31,13 +31,6 @@ export const halftoneEffect = {
         </div>`,
 
     init(app) {
-        // Adiciona listeners para os checkboxes
-        document.getElementById('halftoneGrayscale').addEventListener('change', (e) => {
-            app.updateState({ halftoneGrayscale: e.target.checked });
-        });
-        document.getElementById('halftoneIsBgBlack').addEventListener('change', (e) => {
-            app.updateState({ halftoneIsBgBlack: e.target.checked });
-        });
     },
 
     apply(imageData, state) {

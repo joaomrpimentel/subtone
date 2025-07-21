@@ -39,19 +39,43 @@ export const ditheringEffect = {
     init(app) {
         document.getElementById('dithering-pattern-selector').addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
-                document.querySelector('#dithering-pattern-selector .active').classList.remove('active');
+                const currentActive = document.querySelector('#dithering-pattern-selector .active');
+                if (currentActive) {
+                    currentActive.classList.remove('active');
+                }
                 e.target.classList.add('active');
+                
                 app.updateState({ ditheringPattern: e.target.dataset.pattern });
             }
         });
-        document.getElementById('colorMode').addEventListener('change', (e) => {
-            document.getElementById('threshold-control').classList.toggle('visible', !e.target.checked);
-            document.getElementById('colorCount-control').classList.toggle('visible', e.target.checked);
+        
+        // Listener to toggle control visibility based on color mode
+        const colorModeCheckbox = document.getElementById('colorMode');
+        const thresholdControl = document.getElementById('threshold-control');
+        const colorCountControl = document.getElementById('colorCount-control');
+
+        const toggleControls = () => {
+            thresholdControl.classList.toggle('visible', !colorModeCheckbox.checked);
+            colorCountControl.classList.toggle('visible', colorModeCheckbox.checked);
+        };
+        
+        colorModeCheckbox.addEventListener('change', (e) => {
             app.updateState({ isColorMode: e.target.checked });
+            toggleControls();
         });
+
+        toggleControls();
     },
     apply(imageData, state) {
-        // Funções de ajuda (helpers) específicas para este efeito
+        const { pixelSize, isColorMode, ditheringPattern, threshold, colorCount } = state;
+        const width = imageData.width;
+        const height = imageData.height;
+        const data = imageData.data;
+        const gridW = Math.floor(width / pixelSize);
+        const gridH = Math.floor(height / pixelSize);
+        const pixelGrid = new Array(gridW * gridH);
+        
+        // Helper functions
         const colorDist = (c1, c2) => Math.pow((c1.r - c2.r) * 0.299, 2) + Math.pow((c1.g - c2.g) * 0.587, 2) + Math.pow((c1.b - c2.b) * 0.114, 2);
         
         const findNearestColor = (pixel, palette) => {
@@ -86,14 +110,6 @@ export const ditheringEffect = {
             }
             return palette;
         };
-
-        const { pixelSize, isColorMode, ditheringPattern, threshold, colorCount } = state;
-        const width = imageData.width;
-        const height = imageData.height;
-        const data = imageData.data;
-        const gridW = Math.floor(width / pixelSize);
-        const gridH = Math.floor(height / pixelSize);
-        const pixelGrid = new Array(gridW * gridH);
 
         // 1. Downsample
         for (let y = 0; y < gridH; y++) {
@@ -132,28 +148,33 @@ export const ditheringEffect = {
                     const oldPixel = pixelGrid[i];
                     const newPixel = isColorMode ? findNearestColor(oldPixel, colorPalette) : (oldPixel < threshold ? 0 : 255);
                     pixelGrid[i] = newPixel;
+                    
                     const errR = isColorMode ? oldPixel.r - newPixel.r : oldPixel - newPixel;
                     const errG = isColorMode ? oldPixel.g - newPixel.g : errR;
                     const errB = isColorMode ? oldPixel.b - newPixel.b : errR;
+
                     const setError = (dx, dy, factor) => {
                         const ni = (y + dy) * gridW + (x + dx);
                         if (x + dx >= 0 && x + dx < gridW && y + dy >= 0 && y + dy < gridH) {
                             if (isColorMode) {
-                                pixelGrid[ni].r += errR * factor; pixelGrid[ni].g += errG * factor; pixelGrid[ni].b += errB * factor;
+                                pixelGrid[ni].r += errR * factor;
+                                pixelGrid[ni].g += errG * factor;
+                                pixelGrid[ni].b += errB * factor;
                             } else {
                                 pixelGrid[ni] += errR * factor;
                             }
                         }
                     };
-                    setError(1, 0, 7 / 16); setError(-1, 1, 3 / 16); setError(0, 1, 5 / 16); setError(1, 1, 1 / 16);
+                    setError(1, 0, 7 / 16);
+                    setError(-1, 1, 3 / 16);
+                    setError(0, 1, 5 / 16);
+                    setError(1, 1, 1 / 16);
                 }
             }
         } else { 
             const bayerMatrix = [
-                [0, 8, 2, 10],
-                [12, 4, 14, 6],
-                [3, 11, 1, 9],
-                [15, 7, 13, 5]
+                [0, 8, 2, 10], [12, 4, 14, 6],
+                [3, 11, 1, 9], [15, 7, 13, 5]
             ];
             const bayerSize = 4;
 
@@ -199,7 +220,9 @@ export const ditheringEffect = {
                         const iy = y * pixelSize + py;
                         if (ix < width && iy < height) {
                             const i = (iy * width + ix) * 4;
-                            pixels[i] = color.r; pixels[i+1] = color.g; pixels[i+2] = color.b;
+                            pixels[i] = color.r;
+                            pixels[i+1] = color.g;
+                            pixels[i+2] = color.b;
                         }
                     }
                 }
