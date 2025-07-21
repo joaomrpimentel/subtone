@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -102,7 +102,14 @@
             </div>
         </div>
         <div id="canvas-wrapper" class="canvas-wrapper">
-            <canvas id="imageCanvas"></canvas>
+            <div id="upload-placeholder" class="upload-placeholder">
+                <div class="upload-placeholder-content">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <h2 class="placeholder-title">Click to upload an image</h2>
+                    <p class="placeholder-text">Or drag and drop a file here</p>
+                </div>
+            </div>
+            <canvas id="imageCanvas" class="hidden"></canvas>
         </div>
     </div>
     <script src="main.js" type="module"></script>

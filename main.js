@@ -56,10 +56,13 @@ class ImageProcessorApp {
         this.dom.controlsOverlay = document.getElementById('controls-overlay');
         this.dom.controlsColumn = document.getElementById('controls-column');
         this.dom.controlsMain = document.getElementById('controls-main');
+        this.dom.uploadPlaceholder = document.getElementById('upload-placeholder');
     }
 
     setupEventListeners() {
         this.dom.uploadButton.addEventListener('click', () => this.dom.fileInput.click());
+        this.dom.uploadPlaceholder.addEventListener('click', () => this.dom.fileInput.click());
+        
         this.dom.fileInput.addEventListener('change', (e) => this.loadImage(e.target.files[0]));
         this.dom.exportButton.addEventListener('click', () => this.exportImage());
 
@@ -111,21 +114,7 @@ class ImageProcessorApp {
             }
             this.dom.canvas.width = newWidth;
             this.dom.canvas.height = newHeight;
-        } else {
-            const size = Math.min(maxWidth, maxHeight, 512);
-            this.dom.canvas.width = size;
-            this.dom.canvas.height = size;
-            this.drawPlaceholder();
         }
-    }
-
-    drawPlaceholder() {
-        const { ctx, canvas } = this.dom;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'rgba(0, 255, 65, 0.8)';
-        ctx.textAlign = 'center';
-        ctx.font = `clamp(16px, ${canvas.width * 0.05}px, 24px) 'VT323', monospace`;
-        ctx.fillText('UPLOAD IMAGE TO START', canvas.width / 2, canvas.height / 2);
     }
 
     loadImage(file) {
@@ -134,6 +123,9 @@ class ImageProcessorApp {
         reader.onload = (e) => {
             this.originalImage = new Image();
             this.originalImage.onload = () => {
+                this.dom.uploadPlaceholder.classList.add('hidden');
+                this.dom.canvas.classList.remove('hidden');
+
                 this.resizeCanvas();
                 this.drawImageToCanvas();
                 this.applyEffects();
