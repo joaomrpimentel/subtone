@@ -31,7 +31,7 @@ export const asciiEffect = {
                     <input type="range" id="asciiColorBoost" name="asciiColorBoost" min="0.5" max="5" value="1.5" step="0.1" class="slider">
                 </div>
                  <div class="control-row-flex">
-                    <label for="asciiInvert">Invert Brightness</label>
+                    <label for="asciiInvert">Invert Image</label>
                     <label class="switch"><input type="checkbox" id="asciiInvert" name="asciiInvert"><span class="switch-slider"></span></label>
                 </div>
             </div>
@@ -50,8 +50,12 @@ export const asciiEffect = {
         });
     },
     apply(imageData, state) {
-        const canvas = document.getElementById('imageCanvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        // Cria um canvas temporário para desenhar o efeito
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = imageData.width;
+        tempCanvas.height = imageData.height;
+        const ctx = tempCanvas.getContext('2d');
+
         const { width, height } = imageData;
         const { asciiResolution, asciiInvert, asciiIsColor, asciiColorBoost, asciiFont } = state;
 
@@ -59,12 +63,11 @@ export const asciiEffect = {
         const charRamp = ".:coPO?@▉";
         const rampLength = charRamp.length;
 
-        // 1. Renderiza no canvas
+        // 1. Renderiza no canvas temporário
         const bgColor = '#1a1a1a';
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, width, height);
         
-        // Define a fonte com base na seleção do usuário
         const fontName = asciiFont === 'retro' ? "'VT323', monospace" : "'Courier New', monospace";
         ctx.font = `${asciiResolution * 1.5}px ${fontName}`;
         ctx.textAlign = 'center';
@@ -105,25 +108,21 @@ export const asciiEffect = {
                 const avgB = totalB / count;
                 let avgBrightness = totalBrightness / count;
                 
-                // Inverte o brilho se a opção estiver ativa
                 if (asciiInvert) {
                     avgBrightness = 255 - avgBrightness;
                 }
                 
-                // Mapeia o brilho médio para um caractere na rampa
                 const rampIndex = Math.floor((avgBrightness / 255) * (rampLength - 1));
                 const char = charRamp[rampIndex];
                 
-                // Define a cor do caractere
                 if (asciiIsColor) {
-                    // Aplica o Color Boost (saturação)
                     const luma = 0.2126 * avgR + 0.7152 * avgG + 0.0722 * avgB;
                     const boostedR = Math.max(0, Math.min(255, luma + (avgR - luma) * asciiColorBoost));
                     const boostedG = Math.max(0, Math.min(255, luma + (avgG - luma) * asciiColorBoost));
                     const boostedB = Math.max(0, Math.min(255, luma + (avgB - luma) * asciiColorBoost));
                     ctx.fillStyle = `rgb(${boostedR}, ${boostedG}, ${boostedB})`;
                 } else {
-                    ctx.fillStyle = '#00ff41'; // Cor padrão monocromática
+                    ctx.fillStyle = '#00ff41';
                 }
                 
                 const posX = x + cellW / 2;
@@ -131,5 +130,9 @@ export const asciiEffect = {
                 ctx.fillText(char, posX, posY);
             }
         }
+        
+        // 2. Copia o resultado do canvas temporário para o imageData principal
+        const finalImageData = ctx.getImageData(0, 0, width, height);
+        imageData.data.set(finalImageData.data);
     }
 };
