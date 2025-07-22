@@ -3,6 +3,7 @@ import { ditheringEffect } from './effects/dithering.js';
 import { crtEffect } from './effects/crt.js';
 import { halftoneEffect } from './effects/halftone.js';
 import { palMEffect } from './effects/pal-m.js';
+import { asciiEffect } from './effects/ascii.js';
 import { initUI, toggleControlsPanel } from './ui.js';
 
 // ===================================================================================
@@ -13,6 +14,7 @@ const EFFECTS_LIBRARY = {
     crt: crtEffect,
     "pal-m": palMEffect,
     halftone: halftoneEffect,
+    ascii: asciiEffect,
 };
 
 // ===================================================================================
@@ -34,7 +36,8 @@ class ImageProcessorApp {
                 dithering: { pixelSize: 1, isColorMode: false, ditheringPattern: 'F-S', threshold: 128, colorCount: 8 },
                 crt: { crtDistortion: 0.03, crtDotPitch: 4, crtDotScale: 1, crtPattern: 'Monitor', crtConvergence: 1 },
                 halftone: { halftoneGridSize: 10, halftoneDotScale: 1, halftoneGrayscale: false, halftoneIsBgBlack: true },
-                "pal-m": { palamBleed: 8, palamScanlines: 0.3, palamScanlineGap: 2, palamNoise: 0.15, palamFringing: 2.0, palamSaturation: 1.0, palamPhaseShift: 2 }
+                "pal-m": { palamBleed: 8, palamScanlines: 0.3, palamScanlineGap: 2, palamNoise: 0.15, palamFringing: 2.0, palamSaturation: 1.0, palamPhaseShift: 2 },
+                ascii: { asciiResolution: 8, asciiInvert: false, asciiIsColor: false, asciiColorBoost: 1.5, asciiFont: 'mono' }
             }
         };
         this.init();
@@ -70,7 +73,7 @@ class ImageProcessorApp {
         this.dom.exportButton.addEventListener('click', () => this.exportImage());
 
         // Eventos de Drag and Drop
-        const dropArea = document.body; // Permitir arrastar para qualquer lugar
+        const dropArea = document.body;
         dropArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             if (this.originalImage) return;
@@ -182,16 +185,13 @@ class ImageProcessorApp {
             return item;
         };
 
-        // Limpa ambos os menus
         this.dom.effectsMenu.innerHTML = '';
         this.dom.effectsMenuDesktop.innerHTML = '';
 
-        // Popula ambos os menus
         for (const effectId in this.effectsLibrary) {
             const effect = this.effectsLibrary[effectId];
             this.dom.effectsMenu.appendChild(createEffectButton(effectId, effect));
             this.dom.effectsMenuDesktop.appendChild(createEffectButton(effectId, effect).cloneNode(true));
-            // Re-adiciona o event listener ao clone
             this.dom.effectsMenuDesktop.lastChild.addEventListener('click', () => this.setActiveEffect(effectId));
         }
     }
@@ -253,11 +253,21 @@ class ImageProcessorApp {
                 valueSpan.textContent = currentState[key];
             }
         });
+
+        // Atualiza a UI dos seletores de botão
+        const activeEffectState = this.state.effects[this.state.activeEffect];
+        if (this.state.activeEffect === 'ascii') {
+            document.querySelectorAll('#ascii-font-selector .pattern-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.font === activeEffectState.asciiFont);
+            });
+        }
     }
 
     setActiveEffect(effectId, isInitial = false) {
         if (!isInitial && effectId === this.state.activeEffect) {
-            toggleControlsPanel(true);
+            if (window.innerWidth < 1024) {
+                 toggleControlsPanel(true);
+            }
             return; 
         }
         
@@ -273,6 +283,7 @@ class ImageProcessorApp {
 
     applyEffects() {
         if (!this.originalImageData) return;
+        
         const imageData = new ImageData(
             new Uint8ClampedArray(this.originalImageData.data),
             this.originalImageData.width,
@@ -284,10 +295,15 @@ class ImageProcessorApp {
         const activeEffect = this.effectsLibrary[this.state.activeEffect];
         if (activeEffect && activeEffect.apply) {
             const effectState = this.state.effects[this.state.activeEffect];
-            activeEffect.apply(imageData, effectState);
+            
+            if (this.state.activeEffect === 'ascii') {
+                activeEffect.apply(imageData, effectState);
+            } else {
+                activeEffect.apply(imageData, effectState);
+                this.dom.ctx.clearRect(0, 0, this.dom.canvas.width, this.dom.canvas.height);
+                this.dom.ctx.putImageData(imageData, 0, 0);
+            }
         }
-        this.dom.ctx.clearRect(0, 0, this.dom.canvas.width, this.dom.canvas.height);
-        this.dom.ctx.putImageData(imageData, 0, 0);
     }
 
     applyPreprocessing(pixels, prepState) {
