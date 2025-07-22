@@ -36,26 +36,20 @@ export const crtEffect = {
                 </div>
             </div>
         </div>`,
-
     init(app) {
         document.getElementById('crt-pattern-selector').addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
-                document.querySelector('#crt-pattern-selector .active').classList.remove('active');
+                const currentActive = document.querySelector('#crt-pattern-selector .active');
+                if (currentActive) {
+                    currentActive.classList.remove('active');
+                }
                 e.target.classList.add('active');
                 app.updateState({ crtPattern: e.target.dataset.pattern });
             }
         });
     },
-
     apply(imageData, state) {
-        const {
-            crtDistortion,
-            crtDotPitch,
-            crtDotScale,
-            crtPattern,
-            crtConvergence
-        } = state;
-
+        const { crtDistortion, crtDotPitch, crtDotScale, crtPattern, crtConvergence } = state;
         const width = imageData.width;
         const height = imageData.height;
         const data = imageData.data;
