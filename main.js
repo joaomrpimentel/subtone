@@ -1,8 +1,9 @@
-// Importa os efeitos da biblioteca
+// Importa os módulos
 import { ditheringEffect } from './effects/dithering.js';
 import { crtEffect } from './effects/crt.js';
 import { halftoneEffect } from './effects/halftone.js';
 import { palMEffect } from './effects/pal-m.js';
+import { initUI, toggleControlsPanel } from './ui.js';
 
 // ===================================================================================
 // E F F E C T S   L I B R A R Y
@@ -10,8 +11,8 @@ import { palMEffect } from './effects/pal-m.js';
 const EFFECTS_LIBRARY = {
     dithering: ditheringEffect,
     crt: crtEffect,
-    halftone: halftoneEffect,
     "pal-m": palMEffect,
+    halftone: halftoneEffect,
 };
 
 // ===================================================================================
@@ -27,24 +28,13 @@ class ImageProcessorApp {
         this.state = {
             activeEffect: 'dithering',
             preprocessing: {
-                blackPoint: 0,
-                whitePoint: 255,
-                gamma: 1,
-                grain: 0,
+                blackPoint: 0, whitePoint: 255, gamma: 1, grain: 0,
             },
             effects: {
-                dithering: {
-                    pixelSize: 1, isColorMode: false, ditheringPattern: 'F-S', threshold: 128, colorCount: 8,
-                },
-                crt: {
-                    crtDistortion: 0.03, crtDotPitch: 4, crtDotScale: 1, crtPattern: 'Monitor', crtConvergence: 1,
-                },
-                halftone: {
-                    halftoneGridSize: 10, halftoneDotScale: 1, halftoneGrayscale: false, halftoneIsBgBlack: true,
-                },
-                "pal-m": {
-                    palamBleed: 8, palamScanlines: 0.3, palamScanlineGap: 2, palamNoise: 0.15, palamFringing: 2.0, palamSaturation: 1.0, palamPhaseShift: 2,
-                }
+                dithering: { pixelSize: 1, isColorMode: false, ditheringPattern: 'F-S', threshold: 128, colorCount: 8 },
+                crt: { crtDistortion: 0.03, crtDotPitch: 4, crtDotScale: 1, crtPattern: 'Monitor', crtConvergence: 1 },
+                halftone: { halftoneGridSize: 10, halftoneDotScale: 1, halftoneGrayscale: false, halftoneIsBgBlack: true },
+                "pal-m": { palamBleed: 8, palamScanlines: 0.3, palamScanlineGap: 2, palamNoise: 0.15, palamFringing: 2.0, palamSaturation: 1.0, palamPhaseShift: 2 }
             }
         };
         this.init();
@@ -53,6 +43,7 @@ class ImageProcessorApp {
     init() {
         this.queryDOMElements();
         this.setupEventListeners();
+        initUI(this);
         this.renderEffectSelector();
         this.setActiveEffect('dithering', true);
     }
@@ -64,13 +55,11 @@ class ImageProcessorApp {
         this.dom.uploadButton = document.getElementById('uploadButton');
         this.dom.exportButton = document.getElementById('exportButton');
         this.dom.effectsMenu = document.getElementById('effects-menu');
-        this.dom.effectControlsContainer = document.getElementById('effect-controls-container');
-        this.dom.toggleControlsBtn = document.getElementById('toggle-controls-btn');
-        this.dom.closeControlsBtn = document.getElementById('close-controls-btn');
-        this.dom.controlsOverlay = document.getElementById('controls-overlay');
-        this.dom.controlsColumn = document.getElementById('controls-column');
+        this.dom.effectsMenuDesktop = document.getElementById('effects-menu-desktop');
+        this.dom.effectControlsContainer = document.getElementById('effect-controls-accordion-item');
         this.dom.controlsMain = document.getElementById('controls-main');
         this.dom.uploadPlaceholder = document.getElementById('upload-placeholder');
+        this.dom.controlsPanel = document.getElementById('controls-panel');
     }
 
     setupEventListeners() {
@@ -79,23 +68,22 @@ class ImageProcessorApp {
         this.dom.uploadPlaceholder.addEventListener('click', () => this.dom.fileInput.click());
         this.dom.fileInput.addEventListener('change', (e) => this.loadImage(e.target.files[0]));
         this.dom.exportButton.addEventListener('click', () => this.exportImage());
-        this.dom.toggleControlsBtn.addEventListener('click', () => this.toggleControlsPanel(true));
-        this.dom.closeControlsBtn.addEventListener('click', () => this.toggleControlsPanel(false));
-        this.dom.controlsOverlay.addEventListener('click', () => this.toggleControlsPanel(false));
 
         // Eventos de Drag and Drop
-        const placeholder = this.dom.uploadPlaceholder;
-        placeholder.addEventListener('dragover', (e) => {
+        const dropArea = document.body; // Permitir arrastar para qualquer lugar
+        dropArea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            placeholder.classList.add('drag-over');
+            if (this.originalImage) return;
+            this.dom.uploadPlaceholder.classList.add('drag-over');
         });
-        placeholder.addEventListener('dragleave', (e) => {
+        dropArea.addEventListener('dragleave', (e) => {
             e.preventDefault();
-            placeholder.classList.remove('drag-over');
+            this.dom.uploadPlaceholder.classList.remove('drag-over');
         });
-        placeholder.addEventListener('drop', (e) => {
+        dropArea.addEventListener('drop', (e) => {
             e.preventDefault();
-            placeholder.classList.remove('drag-over');
+            if (this.originalImage) return;
+            this.dom.uploadPlaceholder.classList.remove('drag-over');
             const files = e.dataTransfer.files;
             if (files.length > 0) {
                 this.loadImage(files[0]);
@@ -126,11 +114,6 @@ class ImageProcessorApp {
             const isPreprocessing = target.closest('.preprocessing-panel') !== null;
             this.updateState({ [id]: value }, isPreprocessing);
         });
-    }
-
-    toggleControlsPanel(open) {
-        this.dom.controlsColumn.classList.toggle('open', open);
-        this.dom.controlsOverlay.classList.toggle('open', open);
     }
 
     updateState(newState, isPreprocessing = false) {
@@ -171,6 +154,7 @@ class ImageProcessorApp {
             this.originalImage.onload = () => {
                 this.dom.uploadPlaceholder.classList.add('hidden');
                 this.dom.canvas.classList.remove('hidden');
+                this.dom.exportButton.classList.remove('hidden');
                 this.resizeCanvas();
                 this.drawImageToCanvas();
                 this.applyEffects();
@@ -189,18 +173,27 @@ class ImageProcessorApp {
     }
 
     renderEffectSelector() {
-        this.dom.effectsMenu.innerHTML = '';
-        for (const effectId in this.effectsLibrary) {
-            const effect = this.effectsLibrary[effectId];
-            const item = document.createElement('div');
+        const createEffectButton = (effectId, effect) => {
+            const item = document.createElement('button');
             item.className = 'effect-item';
             item.dataset.effect = effectId;
-            item.innerHTML = `<span class="bracket">[*]</span> ${effect.name}`;
+            item.textContent = effect.name;
             item.addEventListener('click', () => this.setActiveEffect(effectId));
-            this.dom.effectsMenu.appendChild(item);
+            return item;
+        };
+
+        // Limpa ambos os menus
+        this.dom.effectsMenu.innerHTML = '';
+        this.dom.effectsMenuDesktop.innerHTML = '';
+
+        // Popula ambos os menus
+        for (const effectId in this.effectsLibrary) {
+            const effect = this.effectsLibrary[effectId];
+            this.dom.effectsMenu.appendChild(createEffectButton(effectId, effect));
+            this.dom.effectsMenuDesktop.appendChild(createEffectButton(effectId, effect).cloneNode(true));
+            // Re-adiciona o event listener ao clone
+            this.dom.effectsMenuDesktop.lastChild.addEventListener('click', () => this.setActiveEffect(effectId));
         }
-        const activeItem = this.dom.effectsMenu.querySelector(`[data-effect="${this.state.activeEffect}"]`);
-        if (activeItem) activeItem.classList.add('active');
     }
 
     renderEffectControls() {
@@ -210,7 +203,28 @@ class ImageProcessorApp {
             return;
         };
         
-        this.dom.effectControlsContainer.innerHTML = effect.getControlsHTML();
+        let controlsHTML = effect.getControlsHTML();
+        controlsHTML = controlsHTML.replace(/<h3 class="panel-title">--Effect Controls--<\/h3>/, '');
+
+        // Constrói o HTML do acordeão para o efeito
+        this.dom.effectControlsContainer.innerHTML = `
+            <button class="accordion-header active">
+                <span>--Effect Controls--</span>
+                <svg class="accordion-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="accordion-content">
+                <div class="accordion-content-inner">
+                    ${controlsHTML}
+                </div>
+            </div>
+        `;
+
+        // Abre o acordeão do efeito por padrão
+        const content = this.dom.effectControlsContainer.querySelector('.accordion-content');
+        if (content) {
+            content.classList.add('open');
+            content.style.maxHeight = content.scrollHeight + "px";
+        }
 
         if (effect.init) {
             effect.init(this);
@@ -242,10 +256,17 @@ class ImageProcessorApp {
     }
 
     setActiveEffect(effectId, isInitial = false) {
-        if (!isInitial && effectId === this.state.activeEffect) return;
+        if (!isInitial && effectId === this.state.activeEffect) {
+            toggleControlsPanel(true);
+            return; 
+        }
         
         this.state.activeEffect = effectId;
-        this.renderEffectSelector();
+
+        document.querySelectorAll('.effect-item').forEach(item => {
+            item.classList.toggle('active', item.dataset.effect === effectId);
+        });
+
         this.renderEffectControls();
         this.applyEffects();
     }
@@ -292,8 +313,9 @@ class ImageProcessorApp {
     }
     
     exportImage() {
+        if (!this.originalImage) return;
         const link = document.createElement('a');
-        link.download = 'subtone_export.png';
+        link.download = `subtone_export_${this.state.activeEffect}.png`;
         link.href = this.dom.canvas.toDataURL('image/png');
         link.click();
     }
@@ -306,5 +328,5 @@ window.addEventListener('DOMContentLoaded', () => {
     // Controla a tela de loading
     setTimeout(() => {
         document.body.classList.add('loaded');
-    }, 3000);
+    }, 2000);
 });
