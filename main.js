@@ -4,7 +4,7 @@ import { crtEffect } from './effects/crt.js';
 import { halftoneEffect } from './effects/halftone.js';
 import { palMEffect } from './effects/pal-m.js';
 import { asciiEffect } from './effects/ascii.js';
-import { pixelSortingEffect } from './effects/pixel-sort.js'; // Importa o novo efeito
+import { pixelSortingEffect } from './effects/pixel-sort.js';
 import { initUI, toggleControlsPanel } from './ui.js';
 
 // ===================================================================================
@@ -40,7 +40,7 @@ class ImageProcessorApp {
                 halftone: { halftoneGridSize: 10, halftoneDotScale: 1, halftoneGrayscale: false, halftoneIsBgBlack: true },
                 "pal-m": { palamBleed: 8, palamScanlines: 0.3, palamScanlineGap: 2, palamNoise: 0.15, palamFringing: 2.0, palamSaturation: 1.0, palamPhaseShift: 2 },
                 ascii: { asciiResolution: 8, asciiInvert: false, asciiIsColor: true, asciiColorBoost: 1.5, asciiFont: 'mono' },
-                pixelSorting: { sortAngle: 0, sortDirection: 'Horizontal', sortThreshold: 100 }, // Adiciona o estado padrão
+                pixelSorting: { sortAngle: 0, sortDirection: 'Horizontal', sortThreshold: 100 },
             }
         };
         this.init();
@@ -304,14 +304,9 @@ class ImageProcessorApp {
         if (activeEffect && activeEffect.apply) {
             const effectState = this.state.effects[this.state.activeEffect];
             
-            // O ASCII e o Pixel Sorting manipulam o canvas diretamente
-            if (this.state.activeEffect === 'ascii' || this.state.activeEffect === 'pixelSorting') {
-                activeEffect.apply(imageData, effectState);
-            } else {
-                activeEffect.apply(imageData, effectState);
-                this.dom.ctx.clearRect(0, 0, this.dom.canvas.width, this.dom.canvas.height);
-                this.dom.ctx.putImageData(imageData, 0, 0);
-            }
+            activeEffect.apply(imageData, effectState);
+            this.dom.ctx.clearRect(0, 0, this.dom.canvas.width, this.dom.canvas.height);
+            this.dom.ctx.putImageData(imageData, 0, 0);
         }
     }
 

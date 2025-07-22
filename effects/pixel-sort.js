@@ -45,15 +45,13 @@ export const pixelSortingEffect = {
         const originalWidth = imageData.width;
         const originalHeight = imageData.height;
 
-        // Helper para calcular o brilho
         const getBrightness = (r, g, b) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
         // 1. Rodar a imagem num canvas temporário
         const sourceCanvas = document.createElement('canvas');
         sourceCanvas.width = originalWidth;
         sourceCanvas.height = originalHeight;
-        const sourceCtx = sourceCanvas.getContext('2d');
-        sourceCtx.putImageData(imageData, 0, 0);
+        sourceCanvas.getContext('2d').putImageData(imageData, 0, 0);
 
         const radAngle = sortAngle * Math.PI / 180;
         const sin = Math.abs(Math.sin(radAngle));
@@ -125,22 +123,21 @@ export const pixelSortingEffect = {
                 }
             }
         }
-
-        // 3. Desenhar a imagem ordenada e rodada de volta no canvas principal
+        
+        // 3. Rodar a imagem ordenada de volta para um canvas temporário final
         rotatedCtx.putImageData(rotatedImageData, 0, 0);
         
-        const mainCtx = document.getElementById('imageCanvas').getContext('2d');
-        mainCtx.clearRect(0, 0, originalWidth, originalHeight);
-        mainCtx.save();
-        mainCtx.translate(originalWidth / 2, originalHeight / 2);
-        mainCtx.rotate(-radAngle);
-        mainCtx.drawImage(rotatedCanvas, -rotatedWidth / 2, -rotatedHeight / 2);
-        mainCtx.restore();
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = originalWidth;
+        finalCanvas.height = originalHeight;
+        const finalCtx = finalCanvas.getContext('2d');
+        
+        finalCtx.translate(originalWidth / 2, originalHeight / 2);
+        finalCtx.rotate(-radAngle);
+        finalCtx.drawImage(rotatedCanvas, -rotatedWidth / 2, -rotatedHeight / 2);
 
-        // Atualiza o imageData original com o resultado final
-        const finalImageData = mainCtx.getImageData(0, 0, originalWidth, originalHeight);
-        for (let i = 0; i < imageData.data.length; i++) {
-            imageData.data[i] = finalImageData.data[i];
-        }
+        // 4. Copia o resultado para o imageData principal
+        const finalImageData = finalCtx.getImageData(0, 0, originalWidth, originalHeight);
+        imageData.data.set(finalImageData.data);
     }
 };
