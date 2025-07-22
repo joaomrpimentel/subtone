@@ -4,6 +4,7 @@ import { crtEffect } from './effects/crt.js';
 import { halftoneEffect } from './effects/halftone.js';
 import { palMEffect } from './effects/pal-m.js';
 import { asciiEffect } from './effects/ascii.js';
+import { pixelSortingEffect } from './effects/pixel-sort.js'; // Importa o novo efeito
 import { initUI, toggleControlsPanel } from './ui.js';
 
 // ===================================================================================
@@ -15,6 +16,7 @@ const EFFECTS_LIBRARY = {
     "pal-m": palMEffect,
     halftone: halftoneEffect,
     ascii: asciiEffect,
+    pixelSorting: pixelSortingEffect,
 };
 
 // ===================================================================================
@@ -37,7 +39,8 @@ class ImageProcessorApp {
                 crt: { crtDistortion: 0.03, crtDotPitch: 4, crtDotScale: 1, crtPattern: 'Monitor', crtConvergence: 1 },
                 halftone: { halftoneGridSize: 10, halftoneDotScale: 1, halftoneGrayscale: false, halftoneIsBgBlack: true },
                 "pal-m": { palamBleed: 8, palamScanlines: 0.3, palamScanlineGap: 2, palamNoise: 0.15, palamFringing: 2.0, palamSaturation: 1.0, palamPhaseShift: 2 },
-                ascii: { asciiResolution: 8, asciiInvert: false, asciiIsColor: false, asciiColorBoost: 1.5, asciiFont: 'mono' }
+                ascii: { asciiResolution: 8, asciiInvert: false, asciiIsColor: true, asciiColorBoost: 1.5, asciiFont: 'mono' },
+                pixelSorting: { sortAngle: 0, sortDirection: 'Horizontal', sortThreshold: 100 }, // Adiciona o estado padrão
             }
         };
         this.init();
@@ -261,6 +264,11 @@ class ImageProcessorApp {
                 btn.classList.toggle('active', btn.dataset.font === activeEffectState.asciiFont);
             });
         }
+        if (this.state.activeEffect === 'pixelSorting') {
+            document.querySelectorAll('#sort-direction-selector .pattern-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.direction === activeEffectState.sortDirection);
+            });
+        }
     }
 
     setActiveEffect(effectId, isInitial = false) {
@@ -296,7 +304,8 @@ class ImageProcessorApp {
         if (activeEffect && activeEffect.apply) {
             const effectState = this.state.effects[this.state.activeEffect];
             
-            if (this.state.activeEffect === 'ascii') {
+            // O ASCII e o Pixel Sorting manipulam o canvas diretamente
+            if (this.state.activeEffect === 'ascii' || this.state.activeEffect === 'pixelSorting') {
                 activeEffect.apply(imageData, effectState);
             } else {
                 activeEffect.apply(imageData, effectState);
