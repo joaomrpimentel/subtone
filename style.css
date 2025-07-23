@@ -224,6 +224,11 @@ body.loaded .app-container {
 }
 .panel-header-desktop { display: none; } /* Hide desktop header on mobile */
 
+/* Adiciona espaçamento consistente entre os elementos do painel */
+.panel-content > * + * {
+    margin-top: 1.5rem;
+}
+
 /* Custom Scrollbar for WebKit browsers (Chrome, Safari) */
 .panel-content::-webkit-scrollbar {
     width: 8px;
@@ -389,21 +394,6 @@ input:checked + .switch-slider:before { transform: translateX(20px); }
         border-right: 1px solid var(--border-color);
         padding: 2rem;
         background-color: var(--bg-color);
-    }
-    
-    .panel-content > * + * {
-        margin-top: 1.5rem;
-    }
-
-    #exportButton.hidden {
-        display: none !important;
-    }
-    #exportButton {
-        position: fixed;
-        top: 2rem;
-        right: 2rem;
-        z-index: 25;
-        display: flex;
     }
     
     .panel-header-desktop {

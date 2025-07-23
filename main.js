@@ -59,7 +59,8 @@ class ImageProcessorApp {
         this.dom.ctx = this.dom.canvas.getContext('2d', { willReadFrequently: true });
         this.dom.fileInput = document.getElementById('fileInput');
         this.dom.uploadButton = document.getElementById('uploadButton');
-        this.dom.exportButton = document.getElementById('exportButton');
+        this.dom.exportButtonHeader = document.getElementById('exportButtonHeader');
+        this.dom.exportButtonPanel = document.getElementById('exportButtonPanel');
         this.dom.effectsMenu = document.getElementById('effects-menu');
         this.dom.effectsMenuDesktop = document.getElementById('effects-menu-desktop');
         this.dom.effectControlsContainer = document.getElementById('effect-controls-accordion-item');
@@ -73,7 +74,8 @@ class ImageProcessorApp {
         this.dom.uploadButton.addEventListener('click', () => this.dom.fileInput.click());
         this.dom.uploadPlaceholder.addEventListener('click', () => this.dom.fileInput.click());
         this.dom.fileInput.addEventListener('change', (e) => this.loadImage(e.target.files[0]));
-        this.dom.exportButton.addEventListener('click', () => this.exportImage());
+        this.dom.exportButtonHeader.addEventListener('click', () => this.exportImage());
+        this.dom.exportButtonPanel.addEventListener('click', () => this.exportImage());
 
         // Eventos de Drag and Drop
         const dropArea = document.body;
@@ -160,7 +162,8 @@ class ImageProcessorApp {
             this.originalImage.onload = () => {
                 this.dom.uploadPlaceholder.classList.add('hidden');
                 this.dom.canvas.classList.remove('hidden');
-                this.dom.exportButton.classList.remove('hidden');
+                this.dom.exportButtonHeader.classList.remove('hidden');
+                this.dom.exportButtonPanel.classList.remove('hidden');
                 this.resizeCanvas();
                 this.drawImageToCanvas();
                 this.applyEffects();
