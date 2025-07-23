@@ -39,7 +39,7 @@ class ImageProcessorApp {
                 crt: { crtDistortion: 0.03, crtDotPitch: 4, crtDotScale: 1, crtPattern: 'Monitor', crtConvergence: 1 },
                 halftone: { halftoneGridSize: 10, halftoneDotScale: 1, halftoneGrayscale: false, halftoneIsBgBlack: true },
                 "pal-m": { palamBleed: 8, palamScanlines: 0.3, palamScanlineGap: 2, palamNoise: 0.15, palamFringing: 2.0, palamSaturation: 1.0, palamPhaseShift: 2 },
-                ascii: { asciiResolution: 8, asciiInvert: false, asciiIsColor: true, asciiColorBoost: 1.5, asciiFont: 'mono' },
+                ascii: { asciiResolution: 8, asciiInvert: false, asciiIsColor: false, asciiColorBoost: 1.5, asciiFont: 'mono' },
                 pixelSorting: { sortAngle: 0, sortDirection: 'Horizontal', sortThreshold: 100 },
             }
         };
