@@ -2,7 +2,6 @@
  * effects/pixel-sorting.js
  * * Contém a lógica para o efeito de Pixel Sorting.
  * Ordena segmentos de pixéis com base num limiar de brilho.
- * OTIMIZADO: Usa OffscreenCanvas para ser compatível com Web Workers.
  */
 
 export const pixelSortingEffect = {
@@ -48,7 +47,6 @@ export const pixelSortingEffect = {
 
         const getBrightness = (r, g, b) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
-        // 1. Rodar a imagem num OffscreenCanvas temporário
         const sourceCanvas = new OffscreenCanvas(originalWidth, originalHeight);
         sourceCanvas.getContext('2d').putImageData(imageData, 0, 0);
 
@@ -68,60 +66,77 @@ export const pixelSortingEffect = {
         const rotatedImageData = rotatedCtx.getImageData(0, 0, rotatedWidth, rotatedHeight);
         const pixels = rotatedImageData.data;
 
-        // 2. Lógica de Ordenação (inalterada)
+        // Lógica de Ordenação (inalterada)
         const sortSegment = (segment) => segment.sort((a, b) => a.brightness - b.brightness);
 
         if (sortDirection === 'Horizontal') {
             for (let y = 0; y < rotatedHeight; y++) {
-                let segment = [];
+                let start = -1;
                 for (let x = 0; x < rotatedWidth; x++) {
                     const i = (y * rotatedWidth + x) * 4;
-                    const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
-                    const brightness = getBrightness(r, g, b);
+                    const brightness = getBrightness(pixels[i], pixels[i + 1], pixels[i + 2]);
 
-                    if (brightness < sortThreshold) {
-                        if (segment.length > 0) {
-                            const sorted = sortSegment(segment);
-                            for (let j = 0; j < sorted.length; j++) {
-                                const k = (y * rotatedWidth + (x - sorted.length + j)) * 4;
-                                pixels[k] = sorted[j].r;
-                                pixels[k + 1] = sorted[j].g;
-                                pixels[k + 2] = sorted[j].b;
-                            }
-                            segment = [];
+                    if (brightness > sortThreshold) {
+                        if (start === -1) {
+                            start = x;
                         }
                     } else {
-                        segment.push({ r, g, b, brightness });
+                        if (start !== -1) {
+                            const segment = [];
+                            for (let k = start; k < x; k++) {
+                                const j = (y * rotatedWidth + k) * 4;
+                                segment.push({
+                                    r: pixels[j], g: pixels[j+1], b: pixels[j+2],
+                                    brightness: getBrightness(pixels[j], pixels[j+1], pixels[j+2])
+                                });
+                            }
+                            sortSegment(segment);
+                            for (let k = 0; k < segment.length; k++) {
+                                const j = (y * rotatedWidth + (start + k)) * 4;
+                                pixels[j] = segment[k].r;
+                                pixels[j+1] = segment[k].g;
+                                pixels[j+2] = segment[k].b;
+                            }
+                            start = -1;
+                        }
                     }
                 }
             }
         } else { // Vertical
             for (let x = 0; x < rotatedWidth; x++) {
-                let segment = [];
+                 let start = -1;
                 for (let y = 0; y < rotatedHeight; y++) {
                     const i = (y * rotatedWidth + x) * 4;
-                    const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
-                    const brightness = getBrightness(r, g, b);
-
-                    if (brightness < sortThreshold) {
-                        if (segment.length > 0) {
-                            const sorted = sortSegment(segment);
-                            for (let j = 0; j < sorted.length; j++) {
-                                const k = ((y - sorted.length + j) * rotatedWidth + x) * 4;
-                                pixels[k] = sorted[j].r;
-                                pixels[k + 1] = sorted[j].g;
-                                pixels[k + 2] = sorted[j].b;
-                            }
-                            segment = [];
+                    const brightness = getBrightness(pixels[i], pixels[i + 1], pixels[i + 2]);
+                     if (brightness > sortThreshold) {
+                        if (start === -1) {
+                            start = y;
                         }
                     } else {
-                        segment.push({ r, g, b, brightness });
+                        if (start !== -1) {
+                            const segment = [];
+                            for (let k = start; k < y; k++) {
+                                const j = (k * rotatedWidth + x) * 4;
+                                segment.push({
+                                    r: pixels[j], g: pixels[j+1], b: pixels[j+2],
+                                    brightness: getBrightness(pixels[j], pixels[j+1], pixels[j+2])
+                                });
+                            }
+                            sortSegment(segment);
+                            for (let k = 0; k < segment.length; k++) {
+                                const j = ((start + k) * rotatedWidth + x) * 4;
+                                pixels[j] = segment[k].r;
+                                pixels[j+1] = segment[k].g;
+                                pixels[j+2] = segment[k].b;
+                            }
+                            start = -1;
+                        }
                     }
                 }
             }
         }
         
-        // 3. Rodar a imagem ordenada de volta
+        // Rodar a imagem ordenada de volta
         rotatedCtx.putImageData(rotatedImageData, 0, 0);
         
         const finalCanvas = new OffscreenCanvas(originalWidth, originalHeight);
@@ -131,7 +146,7 @@ export const pixelSortingEffect = {
         finalCtx.rotate(-radAngle);
         finalCtx.drawImage(rotatedCanvas, -rotatedWidth / 2, -rotatedHeight / 2);
 
-        // 4. Copia o resultado para o imageData principal
+        // Copia o resultado para o imageData principal
         const finalImageData = finalCtx.getImageData(0, 0, originalWidth, originalHeight);
         imageData.data.set(finalImageData.data);
     }
