@@ -1,34 +1,18 @@
-// Importa os módulos
-import { ditheringEffect } from './effects/dithering.js';
-import { crtEffect } from './effects/crt.js';
-import { halftoneEffect } from './effects/halftone.js';
-import { palMEffect } from './effects/pal-m.js';
-import { asciiEffect } from './effects/ascii.js';
-import { pixelSortingEffect } from './effects/pixel-sort.js';
+// Importa os módulos de UI
 import { initUI, toggleControlsPanel } from './ui.js';
-
-// ===================================================================================
-// E F F E C T S   L I B R A R Y
-// ===================================================================================
-const EFFECTS_LIBRARY = {
-    dithering: ditheringEffect,
-    crt: crtEffect,
-    "pal-m": palMEffect,
-    halftone: halftoneEffect,
-    ascii: asciiEffect,
-    pixelSorting: pixelSortingEffect,
-};
 
 // ===================================================================================
 // A P P L I C A T I O N   C O R E
 // ===================================================================================
 class ImageProcessorApp {
-    constructor(effectsLibrary) {
-        this.effectsLibrary = effectsLibrary;
+    constructor() {
         this.dom = {};
         this.originalImage = null;
         this.originalImageData = null;
-        
+        this.worker = new Worker('./worker.js', { type: 'module' });
+        this.isWorkerBusy = false;
+        this.pendingUpdate = null;
+
         this.state = {
             activeEffect: 'dithering',
             preprocessing: {
@@ -40,7 +24,7 @@ class ImageProcessorApp {
                 halftone: { halftoneGridSize: 10, halftoneDotScale: 1, halftoneGrayscale: false, halftoneIsBgBlack: true },
                 "pal-m": { palamBleed: 8, palamScanlines: 0.3, palamScanlineGap: 2, palamNoise: 0.15, palamFringing: 2.0, palamSaturation: 1.0, palamPhaseShift: 2 },
                 ascii: { asciiResolution: 8, asciiInvert: false, asciiIsColor: false, asciiColorBoost: 1.5, asciiFont: 'mono' },
-                pixelSorting: { sortAngle: 0, sortDirection: 'Horizontal', sortThreshold: 100 },
+                "pixel-sort": { sortAngle: 0, sortDirection: 'Horizontal', sortThreshold: 100 },
             }
         };
         this.init();
@@ -70,6 +54,19 @@ class ImageProcessorApp {
     }
 
     setupEventListeners() {
+        // Listener para respostas do Worker
+        this.worker.onmessage = (e) => {
+            const processedImageData = e.data;
+            this.dom.ctx.clearRect(0, 0, this.dom.canvas.width, this.dom.canvas.height);
+            this.dom.ctx.putImageData(processedImageData, 0, 0);
+            this.isWorkerBusy = false;
+
+            if (this.pendingUpdate) {
+                this.applyEffects();
+                this.pendingUpdate = null;
+            }
+        };
+
         // Eventos de clique
         this.dom.uploadButton.addEventListener('click', () => this.dom.fileInput.click());
         this.dom.uploadPlaceholder.addEventListener('click', () => this.dom.fileInput.click());
@@ -84,17 +81,13 @@ class ImageProcessorApp {
             if (this.originalImage) return;
             this.dom.uploadPlaceholder.classList.add('drag-over');
         });
-        dropArea.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            this.dom.uploadPlaceholder.classList.remove('drag-over');
-        });
+        dropArea.addEventListener('dragleave', () => this.dom.uploadPlaceholder.classList.remove('drag-over'));
         dropArea.addEventListener('drop', (e) => {
             e.preventDefault();
             if (this.originalImage) return;
             this.dom.uploadPlaceholder.classList.remove('drag-over');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                this.loadImage(files[0]);
+            if (e.dataTransfer.files.length > 0) {
+                this.loadImage(e.dataTransfer.files[0]);
             }
         });
 
@@ -131,7 +124,29 @@ class ImageProcessorApp {
             const activeEffectState = this.state.effects[this.state.activeEffect];
             Object.assign(activeEffectState, newState);
         }
-        requestAnimationFrame(() => this.applyEffects());
+        this.applyEffects();
+    }
+    
+    loadImage(file) {
+        if (!file || !file.type.startsWith('image/')) {
+            console.error("O arquivo não é uma imagem.");
+            return;
+        };
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.originalImage = new Image();
+            this.originalImage.onload = () => {
+                this.dom.uploadPlaceholder.classList.add('hidden');
+                this.dom.canvas.classList.remove('hidden');
+                this.dom.exportButtonHeader.classList.remove('hidden');
+                this.dom.exportButtonPanel.classList.remove('hidden');
+                this.resizeCanvas();
+                this.drawImageToCanvas();
+                this.applyEffects();
+            };
+            this.originalImage.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
     }
 
     resizeCanvas() {
@@ -151,28 +166,6 @@ class ImageProcessorApp {
         this.dom.canvas.height = newHeight;
     }
 
-    loadImage(file) {
-        if (!file || !file.type.startsWith('image/')) {
-            console.error("File is not an image.");
-            return;
-        };
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            this.originalImage = new Image();
-            this.originalImage.onload = () => {
-                this.dom.uploadPlaceholder.classList.add('hidden');
-                this.dom.canvas.classList.remove('hidden');
-                this.dom.exportButtonHeader.classList.remove('hidden');
-                this.dom.exportButtonPanel.classList.remove('hidden');
-                this.resizeCanvas();
-                this.drawImageToCanvas();
-                this.applyEffects();
-            };
-            this.originalImage.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-    
     drawImageToCanvas() {
         if (!this.originalImage) return;
         const { ctx, canvas } = this.dom;
@@ -181,97 +174,22 @@ class ImageProcessorApp {
         this.originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     }
 
-    renderEffectSelector() {
-        const createEffectButton = (effectId, effect) => {
-            const item = document.createElement('button');
-            item.className = 'effect-item';
-            item.dataset.effect = effectId;
-            item.textContent = effect.name;
-            item.addEventListener('click', () => this.setActiveEffect(effectId));
-            return item;
-        };
+    applyEffects() {
+        if (!this.originalImageData) return;
 
-        this.dom.effectsMenu.innerHTML = '';
-        this.dom.effectsMenuDesktop.innerHTML = '';
-
-        for (const effectId in this.effectsLibrary) {
-            const effect = this.effectsLibrary[effectId];
-            this.dom.effectsMenu.appendChild(createEffectButton(effectId, effect));
-            this.dom.effectsMenuDesktop.appendChild(createEffectButton(effectId, effect).cloneNode(true));
-            this.dom.effectsMenuDesktop.lastChild.addEventListener('click', () => this.setActiveEffect(effectId));
-        }
-    }
-
-    renderEffectControls() {
-        const effect = this.effectsLibrary[this.state.activeEffect];
-        if (!effect) {
-            this.dom.effectControlsContainer.innerHTML = '';
+        // Se o worker estiver ocupado, marca uma atualização pendente com o estado mais recente.
+        if (this.isWorkerBusy) {
+            this.pendingUpdate = true;
             return;
-        };
+        }
+
+        this.isWorkerBusy = true;
         
-        let controlsHTML = effect.getControlsHTML();
-        controlsHTML = controlsHTML.replace(/<h3 class="panel-title">--Effect Controls--<\/h3>/, '');
-
-        // Constrói o HTML do acordeão para o efeito
-        this.dom.effectControlsContainer.innerHTML = `
-            <button class="accordion-header active">
-                <span>--Effect Controls--</span>
-                <svg class="accordion-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-            </button>
-            <div class="accordion-content">
-                <div class="accordion-content-inner">
-                    ${controlsHTML}
-                </div>
-            </div>
-        `;
-
-        // Abre o acordeão do efeito por padrão
-        const content = this.dom.effectControlsContainer.querySelector('.accordion-content');
-        if (content) {
-            content.classList.add('open');
-            content.style.maxHeight = content.scrollHeight + "px";
-        }
-
-        if (effect.init) {
-            effect.init(this);
-        }
-        this.updateAllControlValues();
-    }
-    
-    updateAllControlValues() {
-        const currentState = {
-            ...this.state.preprocessing,
-            ...this.state.effects[this.state.activeEffect]
-        };
-
-        Object.keys(currentState).forEach(key => {
-            const control = document.getElementById(key);
-            const valueSpan = document.getElementById(`${key}Value`);
-            
-            if (control) {
-                if (control.type === 'checkbox') {
-                    control.checked = currentState[key];
-                } else {
-                    control.value = currentState[key];
-                }
-            }
-            if (valueSpan) {
-                valueSpan.textContent = currentState[key];
-            }
+        // Envia os dados para o worker em vez de processar aqui
+        this.worker.postMessage({
+            imageData: this.originalImageData,
+            state: this.state
         });
-
-        // Atualiza a UI dos seletores de botão
-        const activeEffectState = this.state.effects[this.state.activeEffect];
-        if (this.state.activeEffect === 'ascii') {
-            document.querySelectorAll('#ascii-font-selector .pattern-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.font === activeEffectState.asciiFont);
-            });
-        }
-        if (this.state.activeEffect === 'pixelSorting') {
-            document.querySelectorAll('#sort-direction-selector .pattern-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.direction === activeEffectState.sortDirection);
-            });
-        }
     }
 
     setActiveEffect(effectId, isInitial = false) {
@@ -291,50 +209,125 @@ class ImageProcessorApp {
         this.renderEffectControls();
         this.applyEffects();
     }
-
-    applyEffects() {
-        if (!this.originalImageData) return;
-        
-        const imageData = new ImageData(
-            new Uint8ClampedArray(this.originalImageData.data),
-            this.originalImageData.width,
-            this.originalImageData.height
-        );
-        
-        this.applyPreprocessing(imageData.data, this.state.preprocessing);
-        
-        const activeEffect = this.effectsLibrary[this.state.activeEffect];
-        if (activeEffect && activeEffect.apply) {
-            const effectState = this.state.effects[this.state.activeEffect];
-            
-            activeEffect.apply(imageData, effectState);
-            this.dom.ctx.clearRect(0, 0, this.dom.canvas.width, this.dom.canvas.height);
-            this.dom.ctx.putImageData(imageData, 0, 0);
-        }
-    }
-
-    applyPreprocessing(pixels, prepState) {
-        let { blackPoint, whitePoint, gamma, grain } = prepState;
-        if (whitePoint <= blackPoint) { whitePoint = blackPoint + 1; }
-        const range = whitePoint - blackPoint;
-        for (let i = 0; i < pixels.length; i += 4) {
-            for (let j = 0; j < 3; j++) {
-                let val = pixels[i + j];
-                val = (range > 0) ? (val - blackPoint) / range * 255 : (val < blackPoint ? 0 : 255);
-                pixels[i + j] = Math.max(0, Math.min(255, val));
-            }
-            pixels[i]   = 255 * Math.pow(pixels[i] / 255, gamma);
-            pixels[i+1] = 255 * Math.pow(pixels[i+1] / 255, gamma);
-            pixels[i+2] = 255 * Math.pow(pixels[i+2] / 255, gamma);
-            if (grain > 0) {
-                const noise = (Math.random() - 0.5) * grain;
-                pixels[i]   = Math.max(0, Math.min(255, pixels[i] + noise));
-                pixels[i+1] = Math.max(0, Math.min(255, pixels[i+1] + noise));
-                pixels[i+2] = Math.max(0, Math.min(255, pixels[i+2] + noise));
-            }
-        }
-    }
     
+    renderEffectSelector() {
+        const effectsLibrary = {
+            dithering: { name: 'DITHERING' },
+            crt: { name: 'CRT' },
+            "pal-m": { name: 'PAL-M' },
+            halftone: { name: 'HALFTONE' },
+            ascii: { name: 'ASCII' },
+            "pixel-sort": { name: 'PIXEL SORT' },
+        };
+
+        const createEffectButton = (effectId, effect) => {
+            const item = document.createElement('button');
+            item.className = 'effect-item';
+            item.dataset.effect = effectId;
+            item.textContent = effect.name;
+            item.addEventListener('click', () => this.setActiveEffect(effectId));
+            return item;
+        };
+
+        this.dom.effectsMenu.innerHTML = '';
+        this.dom.effectsMenuDesktop.innerHTML = '';
+
+        for (const effectId in effectsLibrary) {
+            const effect = effectsLibrary[effectId];
+            this.dom.effectsMenu.appendChild(createEffectButton(effectId, effect));
+            this.dom.effectsMenuDesktop.appendChild(createEffectButton(effectId, effect).cloneNode(true));
+            this.dom.effectsMenuDesktop.lastChild.addEventListener('click', () => this.setActiveEffect(effectId));
+        }
+    }
+
+    async renderEffectControls() {
+        const effectId = this.state.activeEffect;
+        try {
+            const effectModule = await import(`./effects/${effectId}.js`);
+            const effectKey = Object.keys(effectModule)[0];
+            const effect = effectModule[effectKey];
+
+            if (!effect || !effect.getControlsHTML) {
+                this.dom.effectControlsContainer.innerHTML = '';
+                return;
+            };
+            
+            let controlsHTML = effect.getControlsHTML();
+            controlsHTML = controlsHTML.replace(/<h3 class="panel-title">--Effect Controls--<\/h3>/, '');
+
+            this.dom.effectControlsContainer.innerHTML = `
+                <button class="accordion-header active">
+                    <span>--Effect Controls--</span>
+                    <svg class="accordion-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="accordion-content">
+                    <div class="accordion-content-inner">
+                        ${controlsHTML}
+                    </div>
+                </div>
+            `;
+
+            const content = this.dom.effectControlsContainer.querySelector('.accordion-content');
+            if (content) {
+                content.classList.add('open');
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+
+            if (effect.init) {
+                effect.init(this);
+            }
+            this.updateAllControlValues();
+        } catch (error) {
+            console.error(`Falha ao carregar controles para o efeito ${effectId}:`, error);
+            this.dom.effectControlsContainer.innerHTML = '';
+        }
+    }
+
+    updateAllControlValues() {
+        const activeEffectState = this.state.effects[this.state.activeEffect];
+        const currentState = {
+            ...this.state.preprocessing,
+            ...activeEffectState
+        };
+
+        Object.keys(currentState).forEach(key => {
+            const control = document.getElementById(key);
+            const valueSpan = document.getElementById(`${key}Value`);
+            
+            if (control) {
+                if (control.type === 'checkbox') {
+                    control.checked = currentState[key];
+                } else {
+                    control.value = currentState[key];
+                }
+            }
+            if (valueSpan) {
+                valueSpan.textContent = currentState[key];
+            }
+        });
+
+        if (this.state.activeEffect === 'ascii') {
+            document.querySelectorAll('#ascii-font-selector .pattern-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.font === activeEffectState.asciiFont);
+            });
+        }
+        if (this.state.activeEffect === 'pixel-sort') {
+            document.querySelectorAll('#sort-direction-selector .pattern-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.direction === activeEffectState.sortDirection);
+            });
+        }
+        if (this.state.activeEffect === 'dithering') {
+             document.querySelectorAll('#dithering-pattern-selector .pattern-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.pattern === activeEffectState.ditheringPattern);
+            });
+        }
+         if (this.state.activeEffect === 'crt') {
+             document.querySelectorAll('#crt-pattern-selector .pattern-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.pattern === activeEffectState.crtPattern);
+            });
+        }
+    }
+
     exportImage() {
         if (!this.originalImage) return;
         const link = document.createElement('a');
@@ -346,7 +339,7 @@ class ImageProcessorApp {
 
 // Inicia a aplicação quando o DOM estiver pronto.
 window.addEventListener('DOMContentLoaded', () => {
-    new ImageProcessorApp(EFFECTS_LIBRARY);
+    new ImageProcessorApp();
 
     // Controla a tela de loading
     setTimeout(() => {

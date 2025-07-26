@@ -1,7 +1,8 @@
 /**
  * effects/pixel-sorting.js
  * * Contém a lógica para o efeito de Pixel Sorting.
- * Ordena segmentos de pixéis com base num limiar de brilho para criar um efeito de "esticamento".
+ * Ordena segmentos de pixéis com base num limiar de brilho.
+ * OTIMIZADO: Usa OffscreenCanvas para ser compatível com Web Workers.
  */
 
 export const pixelSortingEffect = {
@@ -47,10 +48,8 @@ export const pixelSortingEffect = {
 
         const getBrightness = (r, g, b) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
-        // 1. Rodar a imagem num canvas temporário
-        const sourceCanvas = document.createElement('canvas');
-        sourceCanvas.width = originalWidth;
-        sourceCanvas.height = originalHeight;
+        // 1. Rodar a imagem num OffscreenCanvas temporário
+        const sourceCanvas = new OffscreenCanvas(originalWidth, originalHeight);
         sourceCanvas.getContext('2d').putImageData(imageData, 0, 0);
 
         const radAngle = sortAngle * Math.PI / 180;
@@ -59,9 +58,7 @@ export const pixelSortingEffect = {
         const rotatedWidth = Math.floor(originalWidth * cos + originalHeight * sin);
         const rotatedHeight = Math.floor(originalWidth * sin + originalHeight * cos);
 
-        const rotatedCanvas = document.createElement('canvas');
-        rotatedCanvas.width = rotatedWidth;
-        rotatedCanvas.height = rotatedHeight;
+        const rotatedCanvas = new OffscreenCanvas(rotatedWidth, rotatedHeight);
         const rotatedCtx = rotatedCanvas.getContext('2d');
 
         rotatedCtx.translate(rotatedWidth / 2, rotatedHeight / 2);
@@ -71,7 +68,7 @@ export const pixelSortingEffect = {
         const rotatedImageData = rotatedCtx.getImageData(0, 0, rotatedWidth, rotatedHeight);
         const pixels = rotatedImageData.data;
 
-        // 2. Lógica de Ordenação
+        // 2. Lógica de Ordenação (inalterada)
         const sortSegment = (segment) => segment.sort((a, b) => a.brightness - b.brightness);
 
         if (sortDirection === 'Horizontal') {
@@ -124,12 +121,10 @@ export const pixelSortingEffect = {
             }
         }
         
-        // 3. Rodar a imagem ordenada de volta para um canvas temporário final
+        // 3. Rodar a imagem ordenada de volta
         rotatedCtx.putImageData(rotatedImageData, 0, 0);
         
-        const finalCanvas = document.createElement('canvas');
-        finalCanvas.width = originalWidth;
-        finalCanvas.height = originalHeight;
+        const finalCanvas = new OffscreenCanvas(originalWidth, originalHeight);
         const finalCtx = finalCanvas.getContext('2d');
         
         finalCtx.translate(originalWidth / 2, originalHeight / 2);
