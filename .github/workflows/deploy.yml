@@ -14,7 +14,7 @@ jobs:
       - name: Deploy to website/subtone
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.PERSONAL_TOKEN }}
+          personal_token: ${{ secrets.PERSONAL_TOKEN }}
           external_repository: joaomrpimentel/website
           publish_dir: .
           destination_dir: subtone
