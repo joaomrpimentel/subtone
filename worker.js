@@ -12,6 +12,7 @@ import { halftoneEffect } from './effects/halftone.js';
 import { palMEffect } from './effects/pal-m.js';
 import { asciiEffect } from './effects/ascii.js';
 import { pixelSortingEffect } from './effects/pixel-sort.js';
+import { y2kCamEffect } from './effects/y2k-cam.js';
 
 const EFFECTS_LIBRARY = {
     dithering: ditheringEffect,
@@ -20,6 +21,7 @@ const EFFECTS_LIBRARY = {
     halftone: halftoneEffect,
     ascii: asciiEffect,
     "pixel-sort": pixelSortingEffect,
+    "y2k-cam": y2kCamEffect,
 };
 
 // Função de pré-processamento (idêntica à do main.js original)

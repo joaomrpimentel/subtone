@@ -25,6 +25,7 @@ class ImageProcessorApp {
                 "pal-m": { palamBleed: 8, palamScanlines: 0.3, palamScanlineGap: 2, palamNoise: 0.15, palamFringing: 2.0, palamSaturation: 1.0, palamPhaseShift: 2 },
                 ascii: { asciiResolution: 8, asciiInvert: false, asciiIsColor: false, asciiColorBoost: 1.5, asciiFont: 'mono' },
                 "pixel-sort": { sortAngle: 0, sortDirection: 'Horizontal', sortThreshold: 100 },
+                "y2k-cam": { y2kBloom: 0.4, y2kAberration: 3, y2kSaturation: 1.2, y2kVignette: 0.3, y2kTimestamp: true },
             }
         };
         this.init();
@@ -59,6 +60,12 @@ class ImageProcessorApp {
             const processedImageData = e.data;
             this.dom.ctx.clearRect(0, 0, this.dom.canvas.width, this.dom.canvas.height);
             this.dom.ctx.putImageData(processedImageData, 0, 0);
+            
+            // Desenha o timestamp se o efeito Y2K estiver ativo e a opção marcada
+            if (this.state.activeEffect === 'y2k-cam' && this.state.effects['y2k-cam'].y2kTimestamp) {
+                this.drawTimestamp();
+            }
+
             this.isWorkerBusy = false;
 
             if (this.pendingUpdate) {
@@ -116,11 +123,40 @@ class ImageProcessorApp {
             this.updateState({ [id]: value }, isPreprocessing);
         });
     }
+    
+    drawTimestamp() {
+        const { ctx, canvas } = this.dom;
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = String(now.getFullYear()).slice(-2);
+        
+        const dateString = `${day}.${month}.'${year}`;
+
+        const fontSize = Math.max(16, Math.min(canvas.width * 0.045, 28));
+        ctx.font = `${fontSize}px 'VT323', monospace`;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+
+        const padding = fontSize * 0.8;
+        const textMetrics = ctx.measureText(dateString);
+        const textWidth = textMetrics.width;
+        const textHeight = fontSize; 
+        
+        ctx.fillStyle = '#FF9900';
+        ctx.fillText(dateString, canvas.width - padding, canvas.height - padding);
+    }
 
     updateState(newState, isPreprocessing = false) {
         if (isPreprocessing) {
             Object.assign(this.state.preprocessing, newState);
         } else {
+            // Se a propriedade for 'y2kTimestamp', atualizamos o estado e redesenhamos
+            if (newState.hasOwnProperty('y2kTimestamp')) {
+                 Object.assign(this.state.effects[this.state.activeEffect], newState);
+                 this.applyEffects(); // Reaplicar para redesenhar com ou sem timestamp
+                 return;
+            }
             const activeEffectState = this.state.effects[this.state.activeEffect];
             Object.assign(activeEffectState, newState);
         }
@@ -129,7 +165,7 @@ class ImageProcessorApp {
     
     loadImage(file) {
         if (!file || !file.type.startsWith('image/')) {
-            console.error("O arquivo não é uma imagem.");
+            console.error("O ficheiro não é uma imagem.");
             return;
         };
         const reader = new FileReader();
@@ -218,6 +254,7 @@ class ImageProcessorApp {
             halftone: { name: 'HALFTONE' },
             ascii: { name: 'ASCII' },
             "pixel-sort": { name: 'PIXEL SORT' },
+            'y2k-cam': { name: 'Y2K CAM' },
         };
 
         const createEffectButton = (effectId, effect) => {
@@ -278,7 +315,7 @@ class ImageProcessorApp {
             }
             this.updateAllControlValues();
         } catch (error) {
-            console.error(`Falha ao carregar controles para o efeito ${effectId}:`, error);
+            console.error(`Falha ao carregar controlos para o efeito ${effectId}:`, error);
             this.dom.effectControlsContainer.innerHTML = '';
         }
     }
@@ -306,24 +343,18 @@ class ImageProcessorApp {
             }
         });
 
-        if (this.state.activeEffect === 'ascii') {
-            document.querySelectorAll('#ascii-font-selector .pattern-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.font === activeEffectState.asciiFont);
-            });
-        }
-        if (this.state.activeEffect === 'pixel-sort') {
-            document.querySelectorAll('#sort-direction-selector .pattern-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.direction === activeEffectState.sortDirection);
-            });
-        }
-        if (this.state.activeEffect === 'dithering') {
-             document.querySelectorAll('#dithering-pattern-selector .pattern-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.pattern === activeEffectState.ditheringPattern);
-            });
-        }
-         if (this.state.activeEffect === 'crt') {
-             document.querySelectorAll('#crt-pattern-selector .pattern-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.pattern === activeEffectState.crtPattern);
+        // Lógica específica para seletores de botão
+        const selectors = {
+            'ascii': { selector: '#ascii-font-selector', prop: 'asciiFont', dataAttr: 'font' },
+            'pixel-sort': { selector: '#sort-direction-selector', prop: 'sortDirection', dataAttr: 'direction' },
+            'dithering': { selector: '#dithering-pattern-selector', prop: 'ditheringPattern', dataAttr: 'pattern' },
+            'crt': { selector: '#crt-pattern-selector', prop: 'crtPattern', dataAttr: 'pattern' }
+        };
+
+        const effectConfig = selectors[this.state.activeEffect];
+        if (effectConfig) {
+            document.querySelectorAll(`${effectConfig.selector} .pattern-btn`).forEach(btn => {
+                btn.classList.toggle('active', btn.dataset[effectConfig.dataAttr] === activeEffectState[effectConfig.prop]);
             });
         }
     }
