@@ -9,12 +9,19 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Prepare build directory
+        run: |
+          mkdir -p dist
+          cp -r public/* dist/
+          cp -r src dist/
 
       - name: Deploy to website/subtone
         uses: peaceiris/actions-gh-pages@v3
         with:
           personal_token: ${{ secrets.PERSONAL_TOKEN }}
           external_repository: joaomrpimentel/website
-          publish_dir: .
+          publish_dir: ./dist
           destination_dir: subtone
