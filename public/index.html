@@ -12,7 +12,7 @@
 </head>
 <body class="app-body">
 
-    <!-- Tela de Carregamento -->
+    <!-- Loading Screen -->
     <div id="loading-screen">
         <div class="logo-container animated">
             <svg class="subtone-logo" viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg">
@@ -26,10 +26,10 @@
         </div>
     </div>
 
-    <!-- Estrutura Principal da Aplicação -->
+    <!-- Main Application Structure -->
     <div id="app-container" class="app-container">
         
-        <!-- Cabeçalho Mobile -->
+        <!-- Mobile Header -->
         <header id="main-header" class="main-header">
             <div class="logo-container">
                 <svg class="static-subtone-logo-mobile-full" viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg">
@@ -42,7 +42,7 @@
             </button>
         </header>
 
-        <!-- Área do Canvas -->
+        <!-- Canvas Area -->
         <div id="canvas-wrapper" class="canvas-wrapper">
             <div id="upload-placeholder" class="upload-placeholder">
                 <div class="upload-placeholder-content">
@@ -55,19 +55,18 @@
             <div id="slider-tooltip" class="slider-tooltip hidden"></div>
         </div>
 
-        <!-- Rodapé Mobile -->
+        <!-- Mobile Footer -->
         <footer id="footer-bar" class="footer-bar">
             <div id="effects-menu" class="effects-menu">
-                <!-- Efeitos (mobile) serão inseridos aqui pelo JS -->
+                <!-- Effects (mobile) will be inserted here by JS -->
             </div>
             <button id="toggle-controls-btn" class="action-button icon-button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
             </button>
         </footer>
 
-        <!-- Painel de Controles (Sidebar no Desktop) -->
+        <!-- Controls Panel (Sidebar on Desktop) -->
         <div id="controls-panel" class="controls-panel">
-            <!-- Logo para Desktop -->
             <div class="panel-header-desktop">
                 <div class="logo-container-desktop">
                     <svg class="static-subtone-logo-desktop" viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg">
@@ -77,7 +76,6 @@
                 </div>
             </div>
             
-            <!-- Cabeçalho do Painel (Mobile) -->
             <div class="panel-header-mobile">
                 <h2 class="panel-title">CONTROLS</h2>
                 <button id="close-panel-btn" class="action-button icon-button">
@@ -92,15 +90,11 @@
                 </button>
                 <input type="file" id="fileInput" class="visually-hidden-input" accept="image/png, image/jpeg"/>
                 
-                <!-- Menu de Efeitos (Desktop) -->
                 <div class="effects-menu-desktop-container hide-on-mobile">
                     <h3 class="effects-menu-title">/EFFECTS</h3>
-                    <div id="effects-menu-desktop" class="effects-menu-desktop">
-                        <!-- Efeitos (desktop) serão inseridos aqui pelo JS -->
-                    </div>
+                    <div id="effects-menu-desktop" class="effects-menu-desktop"></div>
                 </div>
 
-                <!-- Controles em Acordeão -->
                 <div class="accordion-container">
                     <div class="accordion-item">
                         <button class="accordion-header">
@@ -130,9 +124,7 @@
                             </div>
                         </div>
                     </div>
-                    <div id="effect-controls-accordion-item" class="accordion-item">
-                        <!-- Conteúdo dos controles de efeito será inserido aqui -->
-                    </div>
+                    <div id="effect-controls-accordion-item" class="accordion-item"></div>
                 </div>
                 
                 <button id="exportButtonPanel" class="action-button full-width hidden">
@@ -144,7 +136,6 @@
     </div>
 
     <!-- Scripts -->
-    <script src="ui.js" type="module"></script>
-    <script src="main.js" type="module"></script>
+    <script src="src/app.js" type="module"></script>
 </body>
 </html>

@@ -41,7 +41,6 @@ body {
     display: none;
 }
 
-/* Classe para esconder elementos de forma acessível */
 .visually-hidden-input {
     position: absolute;
     width: 1px;
@@ -295,8 +294,38 @@ body.loaded .app-container {
 .icon-button { padding: 0.5rem; justify-content: center; }
 .button-hint { font-size: 0.875rem; opacity: 0.7; }
 
-/* Form Controls (Sliders, Switches) */
+/* Form Controls (Sliders, Switches, Text Inputs) */
 .control-row-flex { display: flex; align-items: center; justify-content: space-between; }
+
+/* --- NOVOS ESTILOS --- */
+.control-row {
+    display: block;
+    transition: opacity 0.3s, max-height 0.3s ease-out, margin 0.3s;
+    max-height: 100px;
+    opacity: 1;
+    overflow: hidden;
+}
+.control-row.hidden {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0 !important;
+    pointer-events: none;
+}
+.text-input {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--main-color);
+    padding: 0.5rem;
+    width: 100%;
+    font-family: inherit;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+.text-input:focus {
+    outline: 1px solid var(--main-color);
+}
+/* --- FIM DOS NOVOS ESTILOS --- */
+
 input[type="range"] {
     -webkit-appearance: none;
     width: 100%; height: 2px;
