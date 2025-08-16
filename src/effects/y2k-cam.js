@@ -5,29 +5,61 @@
  */
 
 const boxBlur = (data, width, height, radius) => {
-    const sourceData = new Uint8ClampedArray(data);
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            let r = 0, g = 0, b = 0, count = 0;
-            for (let ky = -radius; ky <= radius; ky++) {
-                for (let kx = -radius; kx <= radius; kx++) {
-                    const sy = y + ky;
-                    const sx = x + kx;
-                    if (sx >= 0 && sx < width && sy >= 0 && sy < height) {
-                        const sIdx = (sy * width + sx) * 4;
-                        r += sourceData[sIdx];
-                        g += sourceData[sIdx + 1];
-                        b += sourceData[sIdx + 2];
-                        count++;
-                    }
-                }
-            }
-            const dIdx = (y * width + x) * 4;
-            if (count > 0) {
-                data[dIdx] = r / count;
-                data[dIdx + 1] = g / count;
-                data[dIdx + 2] = b / count;
-            }
+    const temp_data = new Uint8ClampedArray(data);
+    const w = width, h = height, r = radius;
+    const size = (r * 2 + 1);
+
+    // Passada Horizontal
+    for (let y = 0; y < h; y++) {
+        let r_sum = 0, g_sum = 0, b_sum = 0;
+        const offset = y * w * 4;
+
+        for (let i = -r; i <= r; i++) {
+            const idx = offset + Math.max(0, i) * 4;
+            r_sum += temp_data[idx];
+            g_sum += temp_data[idx + 1];
+            b_sum += temp_data[idx + 2];
+        }
+
+        for (let x = 0; x < w; x++) {
+            const idx = offset + x * 4;
+            data[idx] = r_sum / size;
+            data[idx + 1] = g_sum / size;
+            data[idx + 2] = b_sum / size;
+
+            const old_idx = offset + Math.max(0, x - r) * 4;
+            const new_idx = offset + Math.min(w - 1, x + r + 1) * 4;
+            
+            r_sum += temp_data[new_idx] - temp_data[old_idx];
+            g_sum += temp_data[new_idx + 1] - temp_data[old_idx + 1];
+            b_sum += temp_data[new_idx + 2] - temp_data[old_idx + 2];
+        }
+    }
+    
+    // Passada Vertical
+    temp_data.set(data);
+    for (let x = 0; x < w; x++) {
+        let r_sum = 0, g_sum = 0, b_sum = 0;
+
+        for (let i = -r; i <= r; i++) {
+            const idx = Math.max(0, i) * w * 4 + x * 4;
+            r_sum += temp_data[idx];
+            g_sum += temp_data[idx + 1];
+            b_sum += temp_data[idx + 2];
+        }
+        
+        for (let y = 0; y < h; y++) {
+            const idx = y * w * 4 + x * 4;
+            data[idx] = r_sum / size;
+            data[idx + 1] = g_sum / size;
+            data[idx + 2] = b_sum / size;
+
+            const old_idx = Math.max(0, y - r) * w * 4 + x * 4;
+            const new_idx = Math.min(h - 1, y + r + 1) * w * 4 + x * 4;
+
+            r_sum += temp_data[new_idx] - temp_data[old_idx];
+            g_sum += temp_data[new_idx + 1] - temp_data[old_idx + 1];
+            b_sum += temp_data[new_idx + 2] - temp_data[old_idx + 2];
         }
     }
 };
