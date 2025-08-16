@@ -23,7 +23,7 @@ class ImageProcessorApp {
         this.originalImage = null;
         this.originalImageData = null;
 
-        this.worker = new Worker('/src/worker.js', { type: 'module' });
+        this.worker = new Worker('src/worker.js', { type: 'module' });
         this.isWorkerBusy = false;
         this.pendingUpdate = false;
 
